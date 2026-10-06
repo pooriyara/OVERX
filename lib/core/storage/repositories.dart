@@ -4,6 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:overx/core/models/profile.dart';
 import 'package:overx/core/models/settings.dart';
+import 'package:overx/core/models/subscription.dart';
 
 /// نگه‌داری تنظیمات در SharedPreferences.
 class SettingsRepository {
@@ -38,8 +39,21 @@ class ProfileRepository {
   final SharedPreferences _prefs;
 
   static const _key = 'overx.profiles.v1';
+  static const _subsKey = 'overx.subscriptions.v1';
 
   List<Profile> defaults() => const [];
+
+  List<Subscription> loadSubscriptions() {
+    final raw = _prefs.getStringList(_subsKey);
+    if (raw == null) return const [];
+    return raw
+        .map((e) => Subscription.decode(e))
+        .whereType<Subscription>()
+        .toList(growable: false);
+  }
+
+  Future<void> saveSubscriptions(List<Subscription> list) =>
+      _prefs.setStringList(_subsKey, list.map((e) => e.encode()).toList());
 
   List<Profile> load() {
     final raw = _prefs.getStringList(_key);

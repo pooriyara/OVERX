@@ -58,6 +58,7 @@ class Profile {
     this.fields = const {},
     this.rawLink,
     this.latencyMs,
+    this.groupId,
   });
 
   final String id;
@@ -68,6 +69,9 @@ class Profile {
   final Map<String, dynamic> fields;
   final String? rawLink;
   final int? latencyMs;
+
+  /// شناسه‌ی اشتراکی که این پروفایل از آن آمده (null یعنی تکی/دستی).
+  final String? groupId;
 
   // ---- فیلدهای پرکاربرد ----
   String? get uuid => fields['uuid'] as String?;
@@ -96,6 +100,7 @@ class Profile {
     Map<String, dynamic>? fields,
     String? rawLink,
     int? latencyMs,
+    String? groupId,
   }) =>
       Profile(
         id: id,
@@ -106,6 +111,7 @@ class Profile {
         fields: fields ?? this.fields,
         rawLink: rawLink ?? this.rawLink,
         latencyMs: latencyMs ?? this.latencyMs,
+        groupId: groupId ?? this.groupId,
       );
 
   Map<String, dynamic> toJson() => {
@@ -117,6 +123,7 @@ class Profile {
         'fields': fields,
         if (rawLink != null) 'rawLink': rawLink,
         if (latencyMs != null) 'latencyMs': latencyMs,
+        if (groupId != null) 'groupId': groupId,
       };
 
   static Profile fromJson(Map<String, dynamic> j) => Profile(
@@ -131,6 +138,7 @@ class Profile {
         fields: Map<String, dynamic>.from(j['fields'] as Map? ?? {}),
         rawLink: j['rawLink'] as String?,
         latencyMs: (j['latencyMs'] as num?)?.toInt(),
+        groupId: j['groupId'] as String?,
       );
 
   String encode() => jsonEncode(toJson());

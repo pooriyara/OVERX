@@ -9,7 +9,10 @@ import 'package:overx/core/models/app_package.dart';
 import 'package:overx/core/config/link_parser.dart';
 import 'package:overx/core/models/profile.dart';
 import 'package:overx/core/models/settings.dart';
+import 'package:overx/core/models/subscription.dart';
 import 'package:overx/core/models/traffic.dart';
+import 'package:overx/core/net/latency.dart';
+import 'package:overx/core/net/sub_fetcher.dart';
 import 'package:overx/core/process/binary_locator.dart';
 import 'package:overx/core/process/core_process.dart';
 import 'package:overx/core/platform/libbox.dart';
@@ -747,18 +750,158 @@ class ProfilesController extends Notifier<List<Profile>> {
 
   /// افزودن از یک یا چند لینک.
   /// برگشت: تعداد پروفایل‌هایی که با موفقیت اضافه شدند.
-  Future<int> addFromText(String text) async {
-    final parsed = LinkParser.parseMany(text);
+  Future<int> addFromText(String text, {String? groupId}) async {
+    var parsed = LinkParser.parseMany(text);
+    if (groupId != null) {
+      parsed = [for (final e in parsed) e.copyWith(groupId: groupId)];
+    }
     if (parsed.isEmpty) return 0;
     await _commit([...state, ...parsed]);
     return parsed.length;
   }
 
+  /// افزودنِ چند پروفایلِ آماده (مثلاً خروجیِ پارسِ یک اشتراک).
+  Future<int> addMany(List<Profile> items) async {
+    if (items.isEmpty) return 0;
+    await _commit([...state, ...items]);
+    return items.length;
+  }
+
+  /// جایگزینیِ پروفایل‌های یک گروه (برای «آپدیت اشتراک»).
+  Future<void> replaceGroup(String groupId, List<Profile> next) async {
+    final kept = state.where((e) => e.groupId != groupId).toList();
+    await _commit([...kept, ...next]);
+  }
+
+  /// حذفِ پروفایل‌های یک گروه.
+  Future<void> removeGroup(String groupId) async =>
+      _commit(state.where((e) => e.groupId != groupId).toList());
+
   Future<void> select(String id) =>
       ref.read(settingsProvider.notifier).setActiveProfileId(id);
 
+  /// مرتب‌سازی بر اساس پینگ (بدون پینگ آخر لیست).
+  Future<void> sortByPing() async {
+    final next = [...state]..sort((a, b) {
+        final la = a.latencyMs;
+        final lb = b.latencyMs;
+        if (la == null && lb == null) return 0;
+        if (la == null) return 1;
+        if (lb == null) return -1;
+        return la.compareTo(lb);
+      });
+    await _commit(next);
+  }
+
+  /// پینگِ واقعی گرفتن برای یک پروفایل و ذخیره‌ی آن.
+  Future<int?> realPing(Profile p) async {
+    final ms = await LatencyTester.tcpPing(p.address, p.port);
+    await update(p.copyWith(latencyMs: ms));
+    return ms;
+  }
+
+  /// پینگِ واقعی برای چند پروفایل به‌صورت هم‌زمان (محدود).
+  Future<void> realPingAll(List<Profile> targets) async {
+    const conc = 8;
+    for (var i = 0; i < targets.length; i += conc) {
+      final chunk = targets.sublist(i, (i + conc).clamp(0, targets.length));
+      await Future.wait(chunk.map(realPing));
+    }
+  }
+
   /// جایگزینیِ کامل لیست — برای ابزار تولید تصویر و تست‌ها.
   Future<void> seed(List<Profile> items) => _commit(items);
+}
+
+// ------------------------------------------------------------- subscriptions
+
+final subscriptionsProvider =
+    NotifierProvider<SubscriptionsController, List<Subscription>>(
+        SubscriptionsController.new);
+
+class SubscriptionsController extends Notifier<List<Subscription>> {
+  @override
+  List<Subscription> build() =>
+      ref.watch(profileRepositoryProvider).loadSubscriptions();
+
+  Future<void> _commit(List<Subscription> next) async {
+    state = next;
+    await ref.read(profileRepositoryProvider).saveSubscriptions(next);
+  }
+
+  /// افزودنِ یک اشتراک از URL: دریافت، پارس، و ساختِ گروه.
+  /// برگشت: تعداد پروفایل‌های افزوده‌شده؛ خطاها را می‌اندازد.
+  Future<int> addFromUrl(String name, String url) async {
+    final body = await SubscriptionFetcher.fetchBody(url);
+    final parsed = LinkParser.parseMany(body);
+    if (parsed.isEmpty) {
+      throw const SubscriptionFetchException('اشتراکی لینکی برنگرداند');
+    }
+    final sub = Subscription(
+      id: 'sub-${DateTime.now().millisecondsSinceEpoch}',
+      name: name.trim().isEmpty ? Uri.parse(url).host : name.trim(),
+      url: url.trim(),
+      updatedAt: DateTime.now(),
+    );
+    final withGroup = [for (final e in parsed) e.copyWith(groupId: sub.id)];
+    await ref.read(profilesProvider.notifier).addMany(withGroup);
+    await _commit([...state, sub]);
+    return withGroup.length;
+  }
+
+  /// افزودنِ دستی/کلیپ‌برد به‌صورت یک گروهِ بدون URL.
+  Future<int> addFromTextAsGroup(String name, String text) async {
+    final sub = Subscription(
+      id: 'sub-${DateTime.now().millisecondsSinceEpoch}',
+      name: name.trim().isEmpty ? 'دستی' : name.trim(),
+      updatedAt: DateTime.now(),
+    );
+    final count = await ref
+        .read(profilesProvider.notifier)
+        .addFromText(text, groupId: sub.id);
+    if (count == 0) return 0;
+    await _commit([...state, sub]);
+    return count;
+  }
+
+  /// به‌روزرسانیِ یک اشتراک از URL اش.
+  Future<int> update(String id) async {
+    final sub = state.where((e) => e.id == id).firstOrNull;
+    if (sub == null || sub.url == null) return 0;
+    final body = await SubscriptionFetcher.fetchBody(sub.url!);
+    final parsed = LinkParser.parseMany(body);
+    if (parsed.isEmpty) {
+      throw const SubscriptionFetchException('اشتراکی لینکی برنگرداند');
+    }
+    // نگه‌داشتنِ پینگِ قبلی برای پروفایل‌های هم‌نام تا مرتب‌سازی معنا داشته باشد.
+    final old = ref
+        .read(profilesProvider)
+        .where((e) => e.groupId == id)
+        .toList();
+    final oldByName = {for (final e in old) e.rawLink ?? e.id: e.latencyMs};
+    final withGroup = [
+      for (final e in parsed)
+        e.copyWith(
+          groupId: id,
+          latencyMs: oldByName[e.rawLink ?? e.id],
+        ),
+    ];
+    await ref.read(profilesProvider.notifier).replaceGroup(id, withGroup);
+    await _commit([
+      for (final e in state)
+        if (e.id == id) e.copyWith(updatedAt: DateTime.now()) else e,
+    ]);
+    return withGroup.length;
+  }
+
+  Future<void> remove(String id) async {
+    await ref.read(profilesProvider.notifier).removeGroup(id);
+    await _commit(state.where((e) => e.id != id).toList());
+  }
+
+  Future<void> rename(String id, String name) => _commit([
+        for (final e in state) if (e.id == id) e.copyWith(name: name) else e,
+      ]);
 }
 
 final profileRepositoryProvider = Provider<ProfileRepository>((ref) {

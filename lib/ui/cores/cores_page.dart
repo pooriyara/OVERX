@@ -7,6 +7,7 @@ import 'package:overx/l10n/strings.dart';
 import 'package:overx/l10n/strings_provider.dart';
 import 'package:overx/theme/app_theme.dart';
 import 'package:overx/ui/widgets/setting_tile.dart';
+import 'package:overx/core/process/core_installer.dart';
 
 /// صفحه‌ی مدیریت هسته‌ها.
 class CoresPage extends ConsumerWidget {
@@ -209,19 +210,35 @@ class _CoreCardState extends ConsumerState<_CoreCard> {
 
   Future<void> _check() async {
     setState(() => _checking = true);
-    final v = await ref.read(engineProvider.notifier).checkCore(widget.type);
+    var v = await ref.read(engineProvider.notifier).checkCore(widget.type);
+
+    // اگر پیدا نشد و دسکتاپ هستیم، خودکار دانلود/نصب کن و دوباره بررسی کن.
+    String? installError;
+    if (v == null && CoreInstaller.supported) {
+      try {
+        await CoreInstaller.install(widget.type);
+        v = await ref.read(engineProvider.notifier).checkCore(widget.type);
+      } on CoreInstallException catch (e) {
+        installError = e.message;
+      } catch (e) {
+        installError = '$e';
+      }
+    }
+
     if (mounted) setState(() => _checking = false);
     if (!mounted) return;
+    final ok = v != null;
     ScaffoldMessenger.of(context)
       ..clearSnackBars()
       ..showSnackBar(
         SnackBar(
           content: Text(
-            v == null
-                ? '${widget.type.displayName} — ${widget.s.t('notFound')}'
-                : '${widget.type.displayName} v$v',
+            ok
+                ? '${widget.type.displayName} v$v'
+                : installError ??
+                    '${widget.type.displayName} — ${widget.s.t('notFound')}',
           ),
-          backgroundColor: v == null ? StatusColors.error : null,
+          backgroundColor: ok ? null : StatusColors.error,
         ),
       );
   }
