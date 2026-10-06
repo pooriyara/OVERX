@@ -214,7 +214,7 @@ def clean_small(im, min_frac=0.002):
     """حذفِ ذراتِ ریزِ جداافتاده (مثلِ لبه‌ی حرفِ کنارِ نشانه)."""
     from collections import deque as _dq
     import numpy as np
-    a = np.asarray(im.convert('RGBA'))
+    a = np.asarray(im.convert('RGBA')).copy()
     alpha = a[..., 3]
     on = alpha > 128
     h, w = on.shape
@@ -352,8 +352,8 @@ def main():
         with open(os.path.join(anydpi, name), 'w') as f:
             f.write('<?xml version="1.0" encoding="utf-8"?>\n'
                     '<adaptive-icon '
-                    'xmlns:android="http://schemas.android.com/'
-                    'schemas/android/apk/res/android">\n'
+                    'xmlns:android="http://schemas.android.com/apk/res/android">'
+                    '\n'
                     '    <background '
                     'android:drawable="@color/ic_launcher_background" />\n'
                     '    <foreground '
