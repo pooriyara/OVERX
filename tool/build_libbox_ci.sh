@@ -133,7 +133,7 @@ gomobile init
 # --------------------------------------------------------------------- ساخت
 log "scripts/build_libbox.sh"
 cd "$PROJECT_DIR"
-./scripts/build_libbox.sh
+bash scripts/build_libbox.sh
 
 log "خروجی:"
 ls -lh android/libs/libbox.aar

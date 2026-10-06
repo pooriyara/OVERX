@@ -45,7 +45,7 @@ jobs:
         run: flutter test tool/emit_configs_test.dart
 
       - name: sing-box check و xray -test
-        run: ./tool/validate_configs.sh
+        run: bash tool/validate_configs.sh
 
   # لایه‌ی اندروید هیچ‌وقت کامپایل نشده بود چون libbox.aar نداریم. این کار
   # آن را با یک استابِ استخراج‌شده از سورسِ Go کامپایل می‌کند و خطاهایی از
@@ -58,4 +58,4 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: کامپایل با android.jar و استابِ libbox
-        run: ./tool/check_android.sh
+        run: bash tool/check_android.sh

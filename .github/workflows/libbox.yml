@@ -57,7 +57,7 @@ jobs:
         env:
           ANDROID_NDK_HOME: ${{ steps.ndk.outputs.ndk-path }}
           LIBBOX_PLATFORM: ${{ github.event.inputs.platform }}
-        run: ./tool/build_libbox_ci.sh
+        run: bash tool/build_libbox_ci.sh
 
       - name: فهرستِ معماری‌هایِ داخلِ AAR
         run: |
@@ -68,7 +68,7 @@ jobs:
       # کاتلین در برابر APIِ **واقعیِ** gobind کامپایل می‌شود. هر ناهماهنگیِ
       # قرارداد (نام، نوع، مقدارِ بازگشتی) همین‌جا بیرون می‌زند.
       - name: کامپایلِ کاتلین در برابر APIِ واقعی
-        run: ./tool/check_android.sh
+        run: bash tool/check_android.sh
 
       - name: بارگذاریِ AAR
         uses: actions/upload-artifact@v4

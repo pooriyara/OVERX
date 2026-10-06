@@ -41,7 +41,7 @@ ensure_kotlinc() {
 # android.jar و استاب داریم، پس خطای واقعی می‌گیریم نه خط‌مبنا.
 #   source tool/env.sh && check_kotlin
 check_kotlin() {
-  ./tool/check_android.sh
+  bash tool/check_android.sh
 }
 
 # بررسیِ خام (بدون android.jar) — فقط برای مقایسه با خط‌مبنای قدیمی (۱۶ خطا).

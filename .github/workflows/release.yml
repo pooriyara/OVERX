@@ -64,7 +64,7 @@ jobs:
       - name: ساخت libbox.aar
         env:
           ANDROID_NDK_HOME: ${{ steps.ndk.outputs.ndk-path }}
-        run: ./tool/build_libbox_ci.sh
+        run: bash tool/build_libbox_ci.sh
 
       - name: معماری‌های داخلِ AAR
         run: |
@@ -116,7 +116,7 @@ jobs:
       # همان دروازه‌ای که در CI معمولی هم اجرا می‌شود — این‌جا در برابر APIِ
       # واقعیِ gobind، چون AAR را داریم.
       - name: کامپایلِ لایه‌ی اندروید در برابر APIِ واقعیِ libbox
-        run: ./tool/check_android.sh
+        run: bash tool/check_android.sh
 
       - name: آماده‌سازیِ امضا (اختیاری)
         run: |
