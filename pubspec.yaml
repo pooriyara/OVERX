@@ -1,0 +1,42 @@
+name: overx
+description: "OVERX — یک رابط ساده و مینیمال برای دو هسته: sing-box و Xray."
+publish_to: "none"
+version: 1.0.0+1
+
+environment:
+  sdk: ">=3.5.0 <4.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_localizations:
+    sdk: flutter
+
+  # state
+  flutter_riverpod: ^2.5.1
+
+  # storage / paths
+  shared_preferences: ^2.3.0
+  path_provider: ^2.1.4
+  path: ^1.9.0
+
+  # آمار لحظه‌ای از dart:io WebSocket (Clash API) — فقط دسکتاپ/موبایل، نه وب
+  # misc
+  collection: ^1.18.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/
+  fonts:
+    # فونت فارسی همراه برنامه — روی لینوکس که معمولاً فونت فارسی نصب نیست لازم است
+    - family: Vazirmatn
+      fonts:
+        - asset: assets/fonts/Vazirmatn-Regular.ttf
+        - asset: assets/fonts/Vazirmatn-Bold.ttf
+          weight: 700

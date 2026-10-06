@@ -1,0 +1,16 @@
+// استابِ libbox — فقط برای کامپایل (جزئیات در ../STUBS.md)
+// تولیدشده بر اساس sing-box v1.14.2 / experimental/libbox + قواعدِ gobind.
+// فیلدها عمومی‌اند چون در کلاسِ تولیدشده‌ی جاوا هم «پلتفرم‌تایپ» دارند.
+package io.nekohasekai.libbox;
+
+public final class StatusMessage {
+    public long memory;
+    public int goroutines;
+    public int connectionsIn;
+    public int connectionsOut;
+    public boolean trafficAvailable;
+    public long uplink;
+    public long downlink;
+    public long uplinkTotal;
+    public long downlinkTotal;
+}

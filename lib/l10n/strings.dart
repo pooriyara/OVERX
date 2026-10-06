@@ -1,0 +1,392 @@
+import 'package:flutter/widgets.dart';
+
+/// زبان‌های پشتیبانی‌شده.
+enum AppLang { fa, en }
+
+extension AppLangX on AppLang {
+  String get code => name;
+  Locale get locale => Locale(name);
+  TextDirection get direction =>
+      this == AppLang.fa ? TextDirection.rtl : TextDirection.ltr;
+  String get label => this == AppLang.fa ? 'فارسی' : 'English';
+}
+
+/// نگاشتِ کلید به متن، برای هر زبان.
+/// کلیدی اگر در زبان فعلی نباشد، از انگلیسی خوانده می‌شود.
+class Strings {
+  const Strings(this.lang);
+
+  final AppLang lang;
+
+  bool get isRtl => lang == AppLang.fa;
+  TextDirection get direction => lang.direction;
+  Locale get locale => lang.locale;
+
+  static const _fa = <String, String>{
+    'appName': 'دوال‌باکس',
+    'tagline': 'دو هسته، یک رابط',
+    'tagline2': 'یک رابط ساده برای دو هسته‌ی قدرتمند',
+    'grpMain': 'اصلی',
+    'grpConfig': 'پیکربندی',
+    'home': 'خانه',
+    'profiles': 'پروفایل‌ها',
+    'logs': 'لاگ‌ها',
+    'network': 'شبکه',
+    'cores': 'هسته‌ها',
+    'settings': 'تنظیمات',
+    'about': 'درباره',
+
+    // Home
+    'connect': 'اتصال',
+    'disconnect': 'قطع اتصال',
+    'disconnected': 'قطع شده',
+    'connecting': 'در حال اتصال…',
+    'connected': 'متصل',
+    'startHint': 'برای شروع روی دایره بزن',
+    'readyHint': 'آماده اتصال',
+    'upload': 'آپلود',
+    'download': 'دانلود',
+    'activeProfile': 'پروفایل فعال',
+    'latency': 'تأخیر',
+    'session': 'زمان اتصال',
+
+    // Profiles
+    'profilesSub': 'سرورها و کانفیگ‌های ذخیره‌شده‌ات. روی هر کدام بزن تا فعال بشه.',
+    'add': 'افزودن',
+    'addLink': 'افزودن با لینک',
+    'importClip': 'درون‌ریزی از کلیپ‌بورد',
+    'speedTest': 'تست سرعت',
+    'remove': 'حذف',
+    'emptyProfiles': 'هنوز پروفایلی نداری',
+    'emptyProfilesHint': 'یک لینک vless:// / vmess:// / trojan:// / ss:// اضافه کن',
+    'invalidLink': 'لینک معتبر نیست',
+    'added': 'پروفایل اضافه شد',
+
+    // Logs
+    'logsSub': 'خروجی زنده‌ی هسته در حال اجرا.',
+    'clear': 'پاک کردن',
+    'pause': 'توقف',
+    'resume': 'ادامه',
+    'logLevel': 'سطح لاگ',
+    'copyLogs': 'کپی لاگ‌ها',
+
+    // Network
+    'networkSub': 'گروه‌های خروجی و اتصال‌های زنده.',
+    'groups': 'گروه‌ها',
+    'connections': 'اتصال‌ها',
+    'noGroups': 'گروهی گزارش نشده است',
+    'noConnections': 'اتصالی در جریان نیست',
+    'networkUnsupported': 'فقط در حالت libbox',
+    'networkNoData': 'داده‌ای در دسترس نیست',
+    'networkStoppedBody':
+        'وقتی هسته متصل باشد، گروه‌ها و اتصال‌ها از API ی محلیِ sing-box '
+            'خوانده می‌شوند.',
+    'networkXrayBody':
+        'Xray روی دسکتاپ فهرستِ گروه‌ها و اتصال‌ها را در اختیار نمی‌گذارد. '
+            'برای دیدنِ این صفحه هسته‌ی sing-box را انتخاب کن.',
+    'networkUnsupportedBody':
+        'این صفحه داده‌هایش را از سرورِ فرمانِ libbox می‌گیرد. وقتی هسته به '
+            'صورت CLI اجرا می‌شود در دسترس نیست.',
+    'urlTest': 'تست تأخیر',
+    'closeConnection': 'بستن این اتصال',
+    'closeAllConnections': 'بستن همه‌ی اتصال‌ها',
+    'notSelectable': 'غیرقابل انتخاب',
+    'items': 'خروجی',
+
+    // Cores
+    'coresSub': 'هسته‌ی فعال رو انتخاب کن. تنظیمات هر هسته جداگانه ذخیره می‌شه.',
+    'check': 'بررسی',
+    'coreOptions': 'گزینه‌های هسته',
+    'autoSwitchCore': 'تعویض خودکار هسته هنگام خطا',
+    'autoSwitchCoreSub': 'اگر هسته‌ی اصلی بالا نیومد، هسته‌ی دیگر امتحان می‌شه',
+    'keepAlive': 'نگه‌داشتن زنده (keep-alive)',
+    'keepAliveSub': 'راه‌اندازی مجدد خودکار پس از کرش',
+    'binaryPath': 'مسیر باینری',
+    'notFound': 'پیدا نشد',
+    'notSupported': 'روی این سیستم‌عامل پشتیبانی نمی‌شود',
+    'found': 'پیدا شد',
+    'active': 'فعال',
+    'sbDesc': 'هسته‌ی universal با پشتیبانی از TUN، rule-set و پروتکل‌های مدرن. Clash API برای آمار لحظه‌ای.',
+    'xrDesc': 'هسته‌ی پرسرعت با REALITY، XTLS و gRPC Stats API. مناسب کانفیگ‌های قدیمی‌تر.',
+
+    // Settings
+    'settingsSub': 'همه چیزِ غیر از صفحه‌ی اصلی اینجا پیدا می‌شه.',
+    'grpGeneral': 'عمومی',
+    'theme': 'ظاهر',
+    'themeSub': 'روشن، تاریک یا هماهنگ با سیستم',
+    'dark': 'تاریک',
+    'light': 'روشن',
+    'system': 'سیستم',
+    'language': 'زبان',
+    'languageSub': 'تغییر فوریِ جهت چیدمان',
+    'autoStart': 'اجرا در شروع سیستم',
+    'autoStartSub': 'برنامه با بالا آمدن ویندوز/لینوکس اجرا می‌شه',
+    'autoConnect': 'اتصال خودکار',
+    'autoConnectSub': 'آخرین پروفایل هنگام اجرا وصل می‌شه',
+    'minTray': 'کوچک کردن به tray',
+    'minTraySub': 'بستن پنجره برنامه رو نمی‌بنده',
+    'minTraySubAndroid': 'با کشیدن اعلان به پایین، برنامه در پس‌زمینه می‌ماند',
+
+    'grpNetwork': 'شبکه',
+    'tunMode': 'حالت TUN',
+    'tunModeSub': 'عبور دادن همه ترافیک سیستم (نیاز به دسترسی مدیر)',
+    'sysProxy': 'پروکسی سیستم',
+    'sysProxySub': 'تنظیم خودکار پروکسی در تنظیمات سیستم‌عامل',
+    'mixedPort': 'پورت Mixed (SOCKS/HTTP)',
+    'routeMode': 'حالت مسیریابی',
+    'rmRule': 'قاعده‌مند (Rule)',
+    'rmGlobal': 'سراسری (Global)',
+    'rmDirect': 'مستقیم (Direct)',
+    'bypassLan': 'عبور از شبکه‌ی محلی',
+    'bypassLanSub': 'آدرس‌های خصوصی همیشه مستقیم می‌رن',
+    'sniff': 'Sniffing',
+    'sniffSub': 'تشخیص دامنه برای مسیریابی دقیق‌تر',
+    'mux': 'MUX (تجمیع اتصال)',
+    'muxSub': 'کاهش تأخیر در ازای مصرف کمی بیشتر',
+    'ipv6': 'IPv6',
+
+    'grpDns': 'DNS',
+    'dnsMode': 'حالت DNS',
+    'dnsFake': 'Fake-IP',
+    'dnsRemote': 'Remote',
+    'dnsLocal': 'Local',
+    'dnsRemoteAddr': 'سرور DNS راه دور',
+    'dnsLocalAddr': 'سرور DNS محلی',
+
+    'grpAdvanced': 'پیشرفته',
+    'apiPort': 'پورت API محلی',
+    'apiPortSub': 'sing-box → Clash API · Xray → gRPC',
+    'dataDir': 'پوشه‌ی داده',
+    'exportCfg': 'خروجی گرفتن از کانفیگ',
+    'exportCfgSub': 'کانفیگ تولیدشده برای هر دو هسته',
+    'view': 'نمایش',
+    'reset': 'بازنشانی تنظیمات',
+    'resetBtn': 'بازنشانی',
+    'resetConfirm': 'همه تنظیمات به پیش‌فرض برمی‌گرده. مطمئنی؟',
+    'cancel': 'لغو',
+
+    // About
+    'aVersion': 'نسخه برنامه',
+    'aSdk': 'Flutter',
+    'aSb': 'sing-box',
+    'aXr': 'Xray',
+    'aChannel': 'کانال',
+    'aCredits': 'قدردانی',
+    'disclaimer':
+        'این ابزار صرفاً یک رابط مدیریتی برای هسته‌های متن‌باز است و خودش هیچ سرویس یا پروکسی ارائه نمی‌دهد.',
+
+    // Feedback
+    'saved': 'ذخیره شد',
+    'coreSwitched': 'هسته تغییر کرد',
+    'profileActivated': 'پروفایل فعال شد',
+    'settingsReset': 'تنظیمات بازنشانی شد',
+    'switchBlocked': 'اول اتصال رو قطع کن',
+    'ready': 'آماده',
+    'started': 'هسته اجرا شد',
+    'stopped': 'هسته متوقف شد',
+    'startFailed': 'اجرای هسته ناموفق بود',
+    'adminNeeded': 'برای TUN به دسترسی مدیر نیاز است',
+    // Per-app proxy
+    'perAppTitle': 'مسیریابیِ هر برنامه',
+    'perAppNeedsLibbox': 'این قابلیت فقط روی اندروید و با هسته‌ی sing-box (libbox) در دسترس است',
+    'perAppTile': 'مسیریابیِ هر برنامه',
+    'perAppTileSub': 'انتخاب اینکه کدام برنامه‌ها از VPN عبور کنند',
+    'perAppEnable': 'فعال',
+    'perAppEnableSub': 'فقط برنامه‌های انتخاب‌شده (یا همه به‌جز آن‌ها) از VPN عبور می‌کنند',
+    'perAppInclude': 'فقط این‌ها',
+    'perAppExclude': 'همه به‌جز این‌ها',
+    'perAppIncludeHint': 'فقط ترافیک برنامه‌های انتخاب‌شده از VPN می‌گذرد؛ بقیه مستقیم وصل می‌شوند',
+    'perAppExcludeHint': 'ترافیک همه از VPN می‌گذرد به‌جز برنامه‌های انتخاب‌شده',
+    'perAppSearch': 'جستجو…',
+    'perAppSelectAll': 'انتخاب همه',
+    'perAppClear': 'پاک‌کردن',
+    'perAppShowSystem': 'برنامه‌های سیستمی',
+    'perAppSelectedCount': 'انتخاب شده',
+    'perAppSystemApp': 'برنامه‌ی سیستمی',
+    'perAppEmpty': 'برنامه‌ای پیدا نشد',
+    'retry': 'تلاشِ دوباره',
+  };
+
+  static const _en = <String, String>{
+    'appName': 'OVERX',
+    'tagline': 'Two cores, one interface',
+    'tagline2': 'One clean interface for two powerful cores',
+    'grpMain': 'Main',
+    'grpConfig': 'Configuration',
+    'home': 'Home',
+    'profiles': 'Profiles',
+    'logs': 'Logs',
+    'network': 'Network',
+    'cores': 'Cores',
+    'settings': 'Settings',
+    'about': 'About',
+
+    'connect': 'Connect',
+    'disconnect': 'Disconnect',
+    'disconnected': 'Disconnected',
+    'connecting': 'Connecting…',
+    'connected': 'Connected',
+    'startHint': 'Tap the circle to start',
+    'readyHint': 'Ready to connect',
+    'upload': 'Upload',
+    'download': 'Download',
+    'activeProfile': 'Active profile',
+    'latency': 'latency',
+    'session': 'Session',
+
+    'profilesSub': 'Your saved servers and configs. Tap any of them to activate.',
+    'add': 'Add',
+    'addLink': 'Add from link',
+    'importClip': 'Import from clipboard',
+    'speedTest': 'Speed test',
+    'remove': 'Delete',
+    'emptyProfiles': 'No profiles yet',
+    'emptyProfilesHint': 'Add a vless:// / vmess:// / trojan:// / ss:// link',
+    'invalidLink': 'That link is not valid',
+    'added': 'Profile added',
+
+    'logsSub': 'Live output of the running core.',
+    'clear': 'Clear',
+    'pause': 'Pause',
+    'resume': 'Resume',
+    'logLevel': 'Log level',
+    'copyLogs': 'Copy logs',
+
+    // Network
+    'networkSub': 'Outbound groups and live connections.',
+    'groups': 'Groups',
+    'connections': 'Connections',
+    'noGroups': 'No groups reported',
+    'noConnections': 'No active connections',
+    'networkUnsupported': 'libbox only',
+    'networkNoData': 'No data available',
+    'networkStoppedBody':
+        'Once the core is connected, groups and connections are read from '
+            "sing-box's local API.",
+    'networkXrayBody':
+        'Xray does not expose outbound groups or connections on desktop. '
+            'Switch to the sing-box core to see this page.',
+    'networkUnsupportedBody':
+        'This page reads from the libbox command server. It is unavailable '
+            'when the core runs as a CLI process.',
+    'urlTest': 'Latency test',
+    'closeConnection': 'Close this connection',
+    'closeAllConnections': 'Close all connections',
+    'notSelectable': 'Not selectable',
+    'items': 'outbounds',
+
+    'coresSub': 'Pick the active core. Each core keeps its own settings.',
+    'check': 'Check',
+    'coreOptions': 'Core options',
+    'autoSwitchCore': 'Auto-switch core on failure',
+    'autoSwitchCoreSub': 'If the primary core fails to start, the other one is tried',
+    'keepAlive': 'Keep alive',
+    'keepAliveSub': 'Automatically restart after a crash',
+    'binaryPath': 'Binary path',
+    'notFound': 'not found',
+    'notSupported': 'not supported on this OS',
+    'found': 'found',
+    'active': 'active',
+    'sbDesc': 'Universal core with TUN, rule-sets and modern protocols. Clash API for live traffic stats.',
+    'xrDesc': 'High-performance core with REALITY, XTLS and a gRPC Stats API. Great for legacy configs.',
+
+    'settingsSub': "Everything that isn't the home screen lives here.",
+    'grpGeneral': 'General',
+    'theme': 'Appearance',
+    'themeSub': 'Light, dark or follow the system',
+    'dark': 'Dark',
+    'light': 'Light',
+    'system': 'System',
+    'language': 'Language',
+    'languageSub': 'Instantly flips layout direction',
+    'autoStart': 'Launch at startup',
+    'autoStartSub': 'Starts with Windows/Linux login',
+    'autoConnect': 'Auto connect',
+    'autoConnectSub': 'Connects the last profile on launch',
+    'minTray': 'Minimize to tray',
+    'minTraySub': "Closing the window won't quit the app",
+    'minTraySubAndroid': 'Keeps running in the background via the notification',
+
+    'grpNetwork': 'Network',
+    'tunMode': 'TUN mode',
+    'tunModeSub': 'Route all system traffic (needs admin rights)',
+    'sysProxy': 'System proxy',
+    'sysProxySub': 'Set the OS proxy automatically',
+    'mixedPort': 'Mixed port (SOCKS/HTTP)',
+    'routeMode': 'Routing mode',
+    'rmRule': 'Rule',
+    'rmGlobal': 'Global',
+    'rmDirect': 'Direct',
+    'bypassLan': 'Bypass LAN',
+    'bypassLanSub': 'Private addresses always go direct',
+    'sniff': 'Sniffing',
+    'sniffSub': 'Domain detection for more accurate routing',
+    'mux': 'MUX (multiplexing)',
+    'muxSub': 'Lower latency at a small bandwidth cost',
+    'ipv6': 'IPv6',
+
+    'grpDns': 'DNS',
+    'dnsMode': 'DNS mode',
+    'dnsFake': 'Fake-IP',
+    'dnsRemote': 'Remote',
+    'dnsLocal': 'Local',
+    'dnsRemoteAddr': 'Remote DNS server',
+    'dnsLocalAddr': 'Local DNS server',
+
+    'grpAdvanced': 'Advanced',
+    'apiPort': 'Local API port',
+    'apiPortSub': 'sing-box → Clash API · Xray → gRPC',
+    'dataDir': 'Data directory',
+    'exportCfg': 'Export config',
+    'exportCfgSub': 'Generated config for both cores',
+    'view': 'View',
+    'reset': 'Reset settings',
+    'resetBtn': 'Reset',
+    'resetConfirm': 'All settings go back to defaults. Sure?',
+    'cancel': 'Cancel',
+
+    'aVersion': 'App version',
+    'aSdk': 'Flutter',
+    'aSb': 'sing-box',
+    'aXr': 'Xray',
+    'aChannel': 'Channel',
+    'aCredits': 'Credits',
+    'disclaimer':
+        'This is only a management interface for open-source cores; it provides no service or proxy of its own.',
+
+    'saved': 'Saved',
+    'coreSwitched': 'Core switched',
+    'profileActivated': 'Profile activated',
+    'settingsReset': 'Settings reset',
+    'switchBlocked': 'Disconnect first',
+    'ready': 'ready',
+    'started': 'Core started',
+    'stopped': 'Core stopped',
+    'startFailed': 'Failed to start the core',
+    'adminNeeded': 'TUN mode needs administrator rights',
+    // Per-app proxy
+    'perAppTitle': 'Per-app proxy',
+    'perAppNeedsLibbox': 'This is only available on Android with the sing-box core (libbox)',
+    'perAppTile': 'Per-app proxy',
+    'perAppTileSub': 'Choose which apps go through the VPN',
+    'perAppEnable': 'Enabled',
+    'perAppEnableSub': 'Only the selected apps (or all except them) use the VPN',
+    'perAppInclude': 'Only these',
+    'perAppExclude': 'All except these',
+    'perAppIncludeHint': 'Only traffic from the selected apps goes through the VPN; the rest connect directly',
+    'perAppExcludeHint': 'All traffic goes through the VPN except the selected apps',
+    'perAppSearch': 'Search…',
+    'perAppSelectAll': 'Select all',
+    'perAppClear': 'Clear',
+    'perAppShowSystem': 'System apps',
+    'perAppSelectedCount': 'selected',
+    'perAppSystemApp': 'System app',
+    'perAppEmpty': 'No apps found',
+    'retry': 'Retry',
+  };
+
+  String t(String key) => switch (lang) {
+        AppLang.fa => _fa[key] ?? _en[key] ?? key,
+        AppLang.en => _en[key] ?? key,
+  };
+}

@@ -1,0 +1,105 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1180" height="720" viewBox="0 0 1180 720" font-family="-apple-system,Segoe UI,Vazirmatn,sans-serif">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#0b0f14"/><stop offset="1" stop-color="#111823"/>
+    </linearGradient>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#4cc2ff"/>
+    </marker>
+    <marker id="arrowG" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#7ee787"/>
+    </marker>
+    <style>
+      .t{fill:#e6edf3} .d{fill:#8b98a5} .h{fill:#4cc2ff;font-weight:700}
+      .box{fill:#131a22;stroke:#222d3a}
+      .go{fill:#0f2b23;stroke:#2ea043}
+      .kt{fill:#241a10;stroke:#d29922}
+      .dart{fill:#0d2233;stroke:#4cc2ff}
+      .code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px;fill:#a5d6ff}
+      .lbl{font-size:13px} .lblb{font-size:13px;font-weight:600}
+      .badge{font-size:11px;font-weight:700}
+    </style>
+  </defs>
+
+  <rect width="1180" height="720" fill="url(#bg)"/>
+  <text x="590" y="42" text-anchor="middle" class="t" font-size="21" font-weight="700">دو مسیرِ رسیدن به TUN روی اندروید</text>
+  <text x="590" y="66" text-anchor="middle" class="d" font-size="13">در مسیر اول ما fd را می‌سازیم و می‌دهیم؛ در مسیر دوم کتابخانه از ما می‌خواهد</text>
+
+  <!-- ================= مسیر Xray ================= -->
+  <rect x="40" y="100" width="520" height="560" rx="16" fill="#0e141b" stroke="#222d3a"/>
+  <text x="300" y="132" text-anchor="middle" class="h" font-size="16">Xray-core</text>
+  <text x="300" y="152" text-anchor="middle" class="d" font-size="12">مسیرِ «fd خام» — ما اینترفیس را می‌سازیم</text>
+  <rect x="268" y="166" width="64" height="20" rx="10" fill="#2ea043" opacity="0.18"/>
+  <text x="300" y="180" text-anchor="middle" fill="#7ee787" class="badge">آماده</text>
+
+  <rect class="box dart" x="80" y="204" width="440" height="52" rx="10"/>
+  <text x="100" y="226" class="t lblb">Dart — EngineController.connect()</text>
+  <text x="100" y="245" class="code">bridge.prepare() → bridge.acquireTun()</text>
+
+  <path d="M300 256 L300 288" stroke="#4cc2ff" stroke-width="2" marker-end="url(#arrow)"/>
+
+  <rect class="box kt" x="80" y="290" width="440" height="52" rx="10"/>
+  <text x="100" y="312" class="t lblb">Kotlin — TunVpnService</text>
+  <text x="100" y="331" class="code">VpnService.Builder().establish() → fd</text>
+
+  <path d="M300 342 L300 374" stroke="#4cc2ff" stroke-width="2" marker-end="url(#arrow)"/>
+
+  <rect class="box" x="80" y="376" width="440" height="52" rx="10"/>
+  <text x="100" y="398" class="t lblb">Dart — TunHandle(fd).env</text>
+  <text x="100" y="417" class="code">{'XRAY_TUN_FD': '42', 'XRAY_TUN_MTU': '9000'}</text>
+
+  <path d="M300 428 L300 460" stroke="#4cc2ff" stroke-width="2" marker-end="url(#arrow)"/>
+
+  <rect class="box" x="80" y="462" width="440" height="52" rx="10"/>
+  <text x="100" y="484" class="t lblb">فرآیند جداگانه</text>
+  <text x="100" y="503" class="code">CoreProcess.start(environment: env)</text>
+
+  <rect x="80" y="536" width="440" height="92" rx="10" fill="#0d2233" stroke="#1f6feb" stroke-opacity="0.5"/>
+  <text x="100" y="558" class="t lbl">نکته</text>
+  <text x="100" y="578" class="d" font-size="12">وقتی fd از بیرون می‌آید، نباید کلیدهای</text>
+  <text x="100" y="596" class="code">autoSystemRoutingTable / gateway</text>
+  <text x="100" y="614" class="d" font-size="12">را فرستاد — چون VpnService خودش مسیرها را زده.</text>
+
+  <!-- ================= مسیر sing-box ================= -->
+  <rect x="620" y="100" width="520" height="560" rx="16" fill="#0e141b" stroke="#222d3a"/>
+  <text x="880" y="132" text-anchor="middle" class="h" font-size="16">sing-box</text>
+  <text x="880" y="152" text-anchor="middle" class="d" font-size="12">مسیرِ libbox — کتابخانه از ما fd می‌خواهد</text>
+  <rect x="828" y="166" width="104" height="20" rx="10" fill="#d29922" opacity="0.18"/>
+  <text x="880" y="180" text-anchor="middle" fill="#e3b341" class="badge">نیاز به ساخت AAR</text>
+
+  <rect class="box dart" x="660" y="204" width="440" height="52" rx="10"/>
+  <text x="680" y="226" class="t lblb">Dart — libbox.start(config)</text>
+  <text x="680" y="245" class="code">MethodChannel('com.overx/libbox')</text>
+
+  <path d="M880 256 L880 288" stroke="#4cc2ff" stroke-width="2" marker-end="url(#arrow)"/>
+
+  <rect class="box kt" x="660" y="290" width="440" height="52" rx="10"/>
+  <text x="680" y="312" class="t lblb">Kotlin — LibboxVpnService</text>
+  <text x="680" y="331" class="code">CommandServer(...).startOrReloadService(...)</text>
+
+  <path d="M880 342 L880 374" stroke="#7ee787" stroke-width="2" marker-end="url(#arrowG)"/>
+  <text x="890" y="360" class="d" font-size="11">هسته کانفیگ را می‌خواند</text>
+
+  <rect class="box go" x="660" y="376" width="440" height="52" rx="10"/>
+  <text x="680" y="398" class="t lblb">Go — libbox صدا می‌زند openTun(options)</text>
+  <text x="680" y="417" class="code">address / mtu / route / dns / package</text>
+
+  <path d="M880 428 L880 460" stroke="#7ee787" stroke-width="2" marker-end="url(#arrowG)"/>
+
+  <rect class="box kt" x="660" y="462" width="440" height="52" rx="10"/>
+  <text x="680" y="484" class="t lblb">Kotlin — LibboxPlatformInterface.openTun</text>
+  <text x="680" y="503" class="code">Builder().establish() → return pfd.fd</text>
+
+  <path d="M880 514 L880 528" stroke="#7ee787" stroke-width="2"/>
+  <path d="M880 528 L760 528 L760 400" stroke="#7ee787" stroke-width="2" fill="none" marker-end="url(#arrowG)"/>
+  <text x="768" y="518" class="d" font-size="11">fd برمی‌گردد ← options.FileDescriptor</text>
+
+  <rect x="660" y="546" width="440" height="82" rx="10" fill="#241a10" stroke="#d29922" stroke-opacity="0.5"/>
+  <text x="680" y="568" class="t lbl">چرا اصلاً این مسیر؟</text>
+  <text x="680" y="588" class="d" font-size="12">کانفیگ JSON sing-box هیچ فیلد file_descriptor ندارد</text>
+  <text x="680" y="606" class="code">schema.json → 0 occurrence of "descriptor"</text>
+  <text x="680" y="624" class="d" font-size="12">پس CLI هرگز نمی‌تواند fd بگیرد.</text>
+
+  <!-- پاورقی -->
+  <text x="590" y="694" text-anchor="middle" class="d" font-size="12">هر دو مسیر از یک کدبیس Flutter و یک مجوز VpnService استفاده می‌کنند · جزئیات: docs/ANDROID_TUN.md</text>
+</svg>

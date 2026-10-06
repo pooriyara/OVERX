@@ -1,0 +1,1125 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl" data-theme="dark">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>OVERX — UI Prototype</title>
+<style>
+/* ============================================================
+   OVERX — design tokens
+   ============================================================ */
+:root{
+  --radius:18px; --radius-sm:12px; --radius-lg:26px;
+  --rail-w:248px;
+  --easing:cubic-bezier(.22,.61,.36,1);
+  --font:"Segoe UI",Roboto,"Helvetica Neue",Tahoma,"Noto Sans Arabic",system-ui,sans-serif;
+  --font-num:"SF Mono",ui-monospace,"Cascadia Code",Consolas,monospace;
+
+  --bg:#f4f5f7;
+  --surface:#ffffff;
+  --surface-2:#eef0f4;
+  --surface-3:#e4e8ef;
+  --outline:#d9dde5;
+  --text:#10141a;
+  --text-dim:#5f6875;
+  --text-mute:#8a93a1;
+  --primary:#0d7d72;
+  --primary-soft:rgba(13,125,114,.12);
+  --on-primary:#ffffff;
+  --ok:#15a05a;
+  --warn:#c2740a;
+  --danger:#d63b3b;
+  --shadow:0 1px 2px rgba(16,20,26,.05), 0 6px 20px rgba(16,20,26,.07);
+  --shadow-lg:0 2px 6px rgba(16,20,26,.07), 0 24px 60px rgba(16,20,26,.12);
+}
+[data-theme="dark"]{
+  --bg:#0a0c10;
+  --surface:#131720;
+  --surface-2:#1a1f29;
+  --surface-3:#232a36;
+  --outline:#2b3341;
+  --text:#e8edf4;
+  --text-dim:#939fb0;
+  --text-mute:#6b7686;
+  --primary:#5eead4;
+  --primary-soft:rgba(94,234,212,.14);
+  --on-primary:#04231f;
+  --ok:#4ade80;
+  --warn:#fbbf24;
+  --danger:#f87171;
+  --shadow:0 1px 2px rgba(0,0,0,.5), 0 10px 30px rgba(0,0,0,.35);
+  --shadow-lg:0 2px 8px rgba(0,0,0,.5), 0 30px 70px rgba(0,0,0,.5);
+}
+
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{
+  font-family:var(--font);
+  background:var(--bg);
+  color:var(--text);
+  -webkit-font-smoothing:antialiased;
+  overflow:hidden;
+}
+body::before{
+  content:"";position:fixed;inset:0;pointer-events:none;z-index:0;
+  background:
+    radial-gradient(900px 500px at 85% -10%,var(--primary-soft),transparent 65%),
+    radial-gradient(700px 500px at 5% 105%,var(--primary-soft),transparent 60%);
+}
+button,input,select{font:inherit;color:inherit}
+button{background:none;border:0;cursor:pointer}
+::-webkit-scrollbar{width:10px;height:10px}
+::-webkit-scrollbar-thumb{background:var(--surface-3);border-radius:99px;border:3px solid transparent;background-clip:content-box}
+::-webkit-scrollbar-track{background:transparent}
+.icon{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round;flex:none}
+.icon-sm{width:16px;height:16px}
+
+/* ============================================================
+   Shell
+   ============================================================ */
+.app{position:relative;z-index:1;display:grid;grid-template-rows:auto 1fr;height:100dvh}
+
+.topbar{
+  display:flex;align-items:center;gap:10px;
+  padding:10px 14px;
+  padding-top:max(10px,env(safe-area-inset-top));
+  border-bottom:1px solid var(--outline);
+  background:color-mix(in srgb,var(--surface) 80%,transparent);
+  backdrop-filter:blur(14px);
+  -webkit-backdrop-filter:blur(14px);
+  position:sticky;top:0;z-index:40;
+}
+.tb-title{font-size:15px;font-weight:650;letter-spacing:-.01em}
+.tb-sub{font-size:11.5px;color:var(--text-mute);margin-top:1px}
+.tb-spacer{flex:1}
+.icon-btn{
+  width:38px;height:38px;border-radius:11px;display:grid;place-items:center;
+  color:var(--text-dim);transition:.18s var(--easing);
+}
+.icon-btn:hover{background:var(--surface-2);color:var(--text)}
+.icon-btn:active{transform:scale(.94)}
+#menuBtn{display:grid}
+
+.body{display:grid;grid-template-columns:var(--rail-w) 1fr;min-height:0}
+
+/* Drawer */
+.scrim{
+  position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:44;
+  opacity:0;pointer-events:none;transition:opacity .28s var(--easing);
+  backdrop-filter:blur(2px);
+}
+.drawer{
+  grid-column:1;display:flex;flex-direction:column;gap:4px;
+  padding:14px 12px;overflow-y:auto;
+  border-inline-end:1px solid var(--outline);
+  background:color-mix(in srgb,var(--surface) 55%,transparent);
+}
+.brand{display:flex;align-items:center;gap:11px;padding:8px 8px 18px}
+.brand-mark{
+  width:38px;height:38px;border-radius:12px;flex:none;
+  background:linear-gradient(145deg,var(--primary),color-mix(in srgb,var(--primary) 55%,#7c3aed));
+  color:var(--on-primary);display:grid;place-items:center;
+  box-shadow:0 6px 18px color-mix(in srgb,var(--primary) 35%,transparent);
+}
+.brand-name{font-size:15px;font-weight:700;letter-spacing:-.01em}
+.brand-tag{font-size:11px;color:var(--text-mute)}
+.nav-label{font-size:10.5px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--text-mute);padding:14px 12px 6px}
+.nav-item{
+  display:flex;align-items:center;gap:12px;
+  padding:11px 12px;border-radius:13px;width:100%;text-align:start;
+  color:var(--text-dim);font-size:14px;font-weight:520;
+  transition:.18s var(--easing);position:relative;
+}
+.nav-item:hover{background:var(--surface-2);color:var(--text)}
+.nav-item.active{background:var(--primary-soft);color:var(--primary);font-weight:650}
+.nav-item.active .icon{stroke-width:2.1}
+.nav-badge{
+  margin-inline-start:auto;font-size:10.5px;font-weight:700;
+  background:var(--surface-3);color:var(--text-dim);
+  padding:2px 7px;border-radius:99px;font-variant-numeric:tabular-nums;
+}
+.nav-item.active .nav-badge{background:var(--primary);color:var(--on-primary)}
+.drawer-foot{margin-top:auto;padding-top:12px;border-top:1px solid var(--outline)}
+.core-mini{
+  display:flex;align-items:center;gap:10px;padding:10px;border-radius:13px;
+  background:var(--surface-2);font-size:12px;color:var(--text-dim);
+}
+.dot{width:8px;height:8px;border-radius:99px;background:var(--text-mute);flex:none;transition:.2s}
+.dot.on{background:var(--ok);box-shadow:0 0 0 4px color-mix(in srgb,var(--ok) 18%,transparent)}
+.dot.busy{background:var(--warn);animation:pulse 1s infinite}
+@keyframes pulse{50%{opacity:.35}}
+
+/* Main */
+main{grid-column:2;overflow-y:auto;padding:26px 26px 60px;min-height:0;scroll-behavior:smooth}
+.page{display:none;max-width:860px;margin:0 auto;animation:fade .32s var(--easing)}
+.page.active{display:block}
+@keyframes fade{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+.page-head{margin-bottom:22px}
+.page-head h1{font-size:25px;font-weight:700;letter-spacing:-.02em}
+.page-head p{font-size:13.5px;color:var(--text-dim);margin-top:5px}
+
+/* ============================================================
+   Cards
+   ============================================================ */
+.card{
+  background:var(--surface);border:1px solid var(--outline);
+  border-radius:var(--radius);box-shadow:var(--shadow);
+}
+.card-pad{padding:18px}
+.card + .card{margin-top:14px}
+.card-title{font-size:12px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--text-mute);margin-bottom:12px}
+
+/* Status header */
+.status-head{
+  display:flex;align-items:center;gap:12px;flex-wrap:wrap;
+  padding:14px 16px;border-radius:var(--radius);
+  background:var(--surface);border:1px solid var(--outline);box-shadow:var(--shadow);
+  margin-bottom:20px;
+}
+.state-pill{
+  display:inline-flex;align-items:center;gap:7px;
+  padding:6px 13px;border-radius:99px;font-size:12.5px;font-weight:650;
+  background:var(--surface-3);color:var(--text-dim);transition:.3s var(--easing);
+}
+.state-pill[data-state="connected"]{background:color-mix(in srgb,var(--ok) 16%,transparent);color:var(--ok)}
+.state-pill[data-state="connecting"]{background:color-mix(in srgb,var(--warn) 18%,transparent);color:var(--warn)}
+
+/* Core segmented switch */
+.seg{
+  display:inline-flex;padding:3px;gap:2px;background:var(--surface-2);
+  border:1px solid var(--outline);border-radius:99px;
+}
+.seg button{
+  padding:6px 15px;border-radius:99px;font-size:12.5px;font-weight:620;
+  color:var(--text-dim);transition:.2s var(--easing);white-space:nowrap;
+}
+.seg button[aria-pressed="true"]{
+  background:var(--surface);color:var(--text);box-shadow:var(--shadow);
+}
+.seg button[aria-pressed="true"] .seg-dot{background:var(--primary)}
+.seg-dot{width:6px;height:6px;border-radius:99px;background:var(--text-mute);display:inline-block;margin-inline-end:6px;vertical-align:middle}
+
+/* Connect button */
+.connect-wrap{display:flex;flex-direction:column;align-items:center;padding:34px 20px 30px}
+.cbtn{
+  position:relative;width:184px;height:184px;border-radius:99px;
+  display:grid;place-items:center;
+  transition:transform .22s var(--easing);
+}
+.cbtn:active{transform:scale(.965)}
+.cbtn-ring{position:absolute;inset:0;transform:rotate(-90deg)}
+.cbtn-ring circle{fill:none;stroke-width:5;stroke-linecap:round}
+.cbtn-track{stroke:var(--surface-3)}
+.cbtn-prog{stroke:var(--primary);transition:stroke-dashoffset .3s linear}
+.cbtn-core{
+  width:136px;height:136px;border-radius:99px;
+  display:grid;place-items:center;gap:4px;
+  background:var(--surface);
+  border:1px solid var(--outline);
+  box-shadow:var(--shadow-lg);
+  color:var(--text-dim);
+  transition:.35s var(--easing);
+}
+.cbtn-core .icon{width:38px;height:38px;stroke-width:2}
+[data-state="connecting"] .cbtn-core{color:var(--warn);border-color:color-mix(in srgb,var(--warn) 45%,transparent)}
+[data-state="connected"] .cbtn-core{
+  color:var(--ok);
+  background:linear-gradient(160deg,color-mix(in srgb,var(--ok) 14%,var(--surface)),var(--surface));
+  border-color:color-mix(in srgb,var(--ok) 40%,transparent);
+  box-shadow:0 0 0 8px color-mix(in srgb,var(--ok) 8%,transparent),var(--shadow-lg);
+}
+.cbtn-label{font-size:12px;font-weight:650;letter-spacing:.02em}
+[data-state="connected"] .cbtn-hint{color:var(--ok)}
+.cbtn-hint{font-size:11px;color:var(--text-mute);margin-top:6px}
+.timer{
+  font-family:var(--font-num);font-size:12.5px;color:var(--text-dim);
+  margin-top:16px;letter-spacing:.06em;font-variant-numeric:tabular-nums;
+}
+.halo{
+  position:absolute;inset:6px;border-radius:99px;pointer-events:none;
+  border:1px solid var(--ok);opacity:0;
+}
+[data-state="connected"] .halo{animation:halo 2.6s ease-out infinite}
+.halo:nth-child(2){animation-delay:.85s!important}
+.halo:nth-child(3){animation-delay:1.7s!important}
+@keyframes halo{0%{transform:scale(.94);opacity:.5}100%{transform:scale(1.28);opacity:0}}
+
+/* Traffic */
+.traffic{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--outline);border-radius:var(--radius);overflow:hidden;border:1px solid var(--outline)}
+.tf{background:var(--surface);padding:16px 18px}
+.tf-head{display:flex;align-items:center;gap:8px;font-size:11.5px;color:var(--text-mute);font-weight:600}
+.tf-up{color:var(--warn)}.tf-down{color:var(--primary)}
+.tf-val{font-family:var(--font-num);font-size:21px;font-weight:600;margin-top:8px;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+.tf-val small{font-size:11.5px;color:var(--text-mute);font-weight:500;margin-inline-start:4px}
+.tf-speed{font-family:var(--font-num);font-size:11.5px;color:var(--text-dim);margin-top:3px;font-variant-numeric:tabular-nums}
+.spark{height:26px;margin-top:10px;width:100%;display:block}
+
+/* Profile row */
+.prow{display:flex;align-items:center;gap:13px;padding:14px 16px;border-radius:var(--radius);background:var(--surface);border:1px solid var(--outline);box-shadow:var(--shadow);transition:.2s var(--easing);width:100%;text-align:start}
+.prow:hover{border-color:color-mix(in srgb,var(--primary) 40%,var(--outline))}
+.prow-ic{width:40px;height:40px;border-radius:12px;display:grid;place-items:center;background:var(--primary-soft);color:var(--primary);flex:none}
+.prow-name{font-size:14px;font-weight:620}
+.prow-meta{font-size:11.5px;color:var(--text-mute);margin-top:2px;font-family:var(--font-num);direction:ltr;text-align:start}
+.prow-end{margin-inline-start:auto;text-align:end;flex:none}
+.ping{font-family:var(--font-num);font-size:12px;font-weight:650;font-variant-numeric:tabular-nums}
+.ping.good{color:var(--ok)}.ping.mid{color:var(--warn)}.ping.bad{color:var(--danger)}
+.chip{display:inline-block;padding:2px 8px;border-radius:7px;font-size:10px;font-weight:700;background:var(--surface-3);color:var(--text-dim);letter-spacing:.03em}
+
+/* Lists / rows */
+.row{display:flex;align-items:center;gap:14px;padding:14px 2px;border-bottom:1px solid var(--outline)}
+.row:last-child{border-bottom:0}
+.row-t{font-size:13.5px;font-weight:560}
+.row-s{font-size:11.5px;color:var(--text-mute);margin-top:3px;line-height:1.5}
+.row-end{margin-inline-start:auto;flex:none;display:flex;align-items:center;gap:8px}
+
+/* Switch */
+.sw{width:44px;height:26px;border-radius:99px;background:var(--surface-3);position:relative;transition:.22s var(--easing);flex:none}
+.sw::after{content:"";position:absolute;top:3px;inset-inline-start:3px;width:20px;height:20px;border-radius:99px;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.3);transition:.22s var(--easing)}
+[dir="rtl"] .sw::after{inset-inline-start:auto;inset-inline-end:3px}
+.sw[aria-checked="true"]{background:var(--primary)}
+.sw[aria-checked="true"]::after{transform:translateX(-18px)}
+[dir="rtl"] .sw[aria-checked="true"]::after{transform:translateX(18px)}
+
+/* Buttons */
+.btn{display:inline-flex;align-items:center;gap:8px;padding:10px 17px;border-radius:12px;font-size:13px;font-weight:620;background:var(--surface-2);color:var(--text);border:1px solid var(--outline);transition:.18s var(--easing)}
+.btn:hover{background:var(--surface-3)}
+.btn:active{transform:scale(.97)}
+.btn-primary{background:var(--primary);color:var(--on-primary);border-color:transparent}
+.btn-primary:hover{filter:brightness(1.07);background:var(--primary)}
+.btn-danger{color:var(--danger);border-color:color-mix(in srgb,var(--danger) 35%,transparent);background:color-mix(in srgb,var(--danger) 9%,transparent)}
+.btn-sm{padding:7px 12px;font-size:12px;border-radius:10px}
+
+/* Select / input */
+.sel,input[type=text],input[type=number]{
+  background:var(--surface-2);border:1px solid var(--outline);border-radius:11px;
+  padding:9px 12px;font-size:13px;min-width:132px;outline:none;transition:.18s;
+}
+.sel:focus,input:focus{border-color:var(--primary);box-shadow:0 0 0 3px var(--primary-soft)}
+select.sel{cursor:pointer;appearance:none;padding-inline-end:30px;
+  background-image:linear-gradient(45deg,transparent 50%,var(--text-mute) 50%),linear-gradient(135deg,var(--text-mute) 50%,transparent 50%);
+  background-position:calc(100% - 17px) calc(50% + 1px),calc(100% - 12px) calc(50% + 1px);
+  background-size:5px 5px,5px 5px;background-repeat:no-repeat}
+
+/* Log */
+.log{
+  font-family:var(--font-num);font-size:11.5px;line-height:1.75;
+  background:#07090d;color:#b9c6d6;border:1px solid var(--outline);
+  border-radius:var(--radius);padding:14px;height:340px;overflow-y:auto;
+  direction:ltr;text-align:left;white-space:pre-wrap;word-break:break-word;
+}
+.log .t{color:#5c6b7e}
+.log .i{color:#8ab4f8}
+.log .w{color:#fbbf24}
+.log .e{color:#f87171}
+[data-theme="light"] .log{background:#0d1117}
+
+/* Core cards */
+.core-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px}
+.core-card{padding:18px;border-radius:var(--radius);background:var(--surface);border:1px solid var(--outline);box-shadow:var(--shadow);position:relative;overflow:hidden}
+.core-card.sel{border-color:var(--primary);box-shadow:0 0 0 3px var(--primary-soft),var(--shadow)}
+.core-logo{width:42px;height:42px;border-radius:13px;display:grid;place-items:center;font-weight:800;font-size:15px;color:#fff;flex:none}
+.cc-name{font-size:15px;font-weight:700;margin-top:12px}
+.cc-ver{font-family:var(--font-num);font-size:11.5px;color:var(--text-mute);margin-top:3px}
+.cc-desc{font-size:12px;color:var(--text-dim);margin-top:9px;line-height:1.6}
+.cc-foot{display:flex;align-items:center;gap:8px;margin-top:14px}
+
+/* Profile cards */
+.pcard{padding:15px;border-radius:var(--radius);background:var(--surface);border:1px solid var(--outline);box-shadow:var(--shadow);display:flex;gap:13px;align-items:flex-start}
+.pcard + .pcard{margin-top:10px}
+.pcard.sel{border-color:var(--primary);box-shadow:0 0 0 3px var(--primary-soft),var(--shadow)}
+
+/* About */
+.about-hero{display:flex;align-items:center;gap:16px;padding:22px;border-radius:var(--radius);background:var(--surface);border:1px solid var(--outline);box-shadow:var(--shadow)}
+.about-hero .brand-mark{width:56px;height:56px;border-radius:17px}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:9px 18px;font-size:12.5px}
+.kv dt{color:var(--text-mute)}
+.kv dd{font-family:var(--font-num);font-size:12px;text-align:end}
+
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media(max-width:640px){.grid-2{grid-template-columns:1fr}}
+
+/* Toast */
+.toast{
+  position:fixed;inset-inline:0;bottom:26px;margin-inline:auto;width:fit-content;
+  max-width:calc(100vw - 32px);
+  background:var(--surface);border:1px solid var(--outline);border-radius:14px;
+  padding:12px 18px;font-size:13px;box-shadow:var(--shadow-lg);
+  display:flex;align-items:center;gap:10px;z-index:90;
+  transform:translateY(140%);transition:transform .38s var(--easing);
+}
+.toast.show{transform:none}
+
+/* ============================================================
+   Responsive — mobile: drawer becomes overlay w/ hamburger
+   ============================================================ */
+@media(max-width:960px){
+  .body{grid-template-columns:1fr}
+  main{grid-column:1;padding:18px 16px 70px}
+  .drawer{
+    position:fixed;z-index:46;top:0;bottom:0;inset-inline-start:0;width:270px;max-width:84vw;
+    background:var(--surface);
+    transform:translateX(var(--drawer-x,0));
+    transition:transform .3s var(--easing);
+    box-shadow:var(--shadow-lg);
+  }
+  html[dir="rtl"] .drawer{transform:translateX(var(--drawer-x,0))}
+  body.nav-open .drawer{--drawer-x:0}
+  body:not(.nav-open) .drawer{--drawer-x:calc(-100% - 20px)}
+  html[dir="rtl"] body:not(.nav-open) .drawer{--drawer-x:calc(100% + 20px)}
+  body.nav-open .scrim{opacity:1;pointer-events:auto}
+  .cbtn{width:160px;height:160px}
+  .cbtn-core{width:118px;height:118px}
+  .cbtn-core .icon{width:32px;height:32px}
+}
+@media(min-width:961px){
+  .scrim{display:none}
+  #menuBtn{display:none}
+}
+</style>
+</head>
+<body>
+
+<!-- ============ ICON SPRITE ============ -->
+<svg style="display:none" xmlns="http://www.w3.org/2000/svg">
+  <symbol id="i-menu" viewBox="0 0 24 24"><path d="M3 6h18M3 12h18M3 18h18"/></symbol>
+  <symbol id="i-close" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></symbol>
+  <symbol id="i-home" viewBox="0 0 24 24"><path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1z"/></symbol>
+  <symbol id="i-list" viewBox="0 0 24 24"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></symbol>
+  <symbol id="i-term" viewBox="0 0 24 24"><path d="m4 17 6-6-6-6M12 19h8"/></symbol>
+  <symbol id="i-layers" viewBox="0 0 24 24"><path d="M12 2 2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></symbol>
+  <symbol id="i-settings" viewBox="0 0 24 24"><path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6"/></symbol>
+  <symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 16v-4M12 8h.01"/></symbol>
+  <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></symbol>
+  <symbol id="i-moon" viewBox="0 0 24 24"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></symbol>
+  <symbol id="i-globe" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a15 15 0 0 1 0 18a15 15 0 0 1 0-18z"/></symbol>
+  <symbol id="i-power" viewBox="0 0 24 24"><path d="M12 3v9"/><path d="M18.4 6.6a9 9 0 1 1-12.8 0"/></symbol>
+  <symbol id="i-up" viewBox="0 0 24 24"><path d="M12 19V5M5 12l7-7 7 7"/></symbol>
+  <symbol id="i-down" viewBox="0 0 24 24"><path d="M12 5v14M19 12l-7 7-7-7"/></symbol>
+  <symbol id="i-act" viewBox="0 0 24 24"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></symbol>
+  <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></symbol>
+  <symbol id="i-trash" viewBox="0 0 24 24"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6M10 11v6M14 11v6"/></symbol>
+  <symbol id="i-copy" viewBox="0 0 24 24"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v1"/></symbol>
+  <symbol id="i-refresh" viewBox="0 0 24 24"><path d="M21 12a9 9 0 1 1-3-6.7L21 8M21 3v5h-5"/></symbol>
+  <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></symbol>
+  <symbol id="i-chev" viewBox="0 0 24 24"><path d="m9 6 6 6-6 6"/></symbol>
+  <symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></symbol>
+  <symbol id="i-tun" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h10"/><circle cx="19" cy="18" r="2"/></symbol>
+  <symbol id="i-bolt" viewBox="0 0 24 24"><path d="M13 2 4 14h7l-1 8 9-12h-7z"/></symbol>
+  <symbol id="i-box" viewBox="0 0 24 24"><path d="M21 8v8a2 2 0 0 1-1 1.7l-7 4a2 2 0 0 1-2 0l-7-4A2 2 0 0 1 3 16V8a2 2 0 0 1 1-1.7l7-4a2 2 0 0 1 2 0l7 4A2 2 0 0 1 21 8z"/><path d="m3.3 7 8.7 5 8.7-5M12 22V12"/></symbol>
+</svg>
+
+<div class="app">
+
+  <!-- ============ TOP BAR ============ -->
+  <header class="topbar">
+    <button class="icon-btn" id="menuBtn" aria-label="menu"><svg class="icon"><use href="#i-menu"/></svg></button>
+    <div>
+      <div class="tb-title" id="tbTitle">خانه</div>
+      <div class="tb-sub" id="tbSub">OVERX — sing-box &amp; Xray</div>
+    </div>
+    <div class="tb-spacer"></div>
+    <button class="icon-btn" id="langBtn" title="Language"><svg class="icon"><use href="#i-globe"/></svg></button>
+    <button class="icon-btn" id="themeBtn" title="Theme"><svg class="icon"><use href="#i-sun"/></svg></button>
+  </header>
+
+  <div class="body">
+    <div class="scrim" id="scrim"></div>
+
+    <!-- ============ DRAWER ============ -->
+    <nav class="drawer" id="drawer">
+      <div class="brand">
+        <div class="brand-mark"><svg class="icon"><use href="#i-box"/></svg></div>
+        <div>
+          <div class="brand-name">OVERX</div>
+          <div class="brand-tag" data-i18n="tagline">دو هسته، یک رابط</div>
+        </div>
+      </div>
+
+      <div class="nav-label" data-i18n="grpMain">اصلی</div>
+      <button class="nav-item active" data-page="home"><svg class="icon"><use href="#i-home"/></svg><span data-i18n="home">خانه</span></button>
+      <button class="nav-item" data-page="profiles"><svg class="icon"><use href="#i-list"/></svg><span data-i18n="profiles">پروفایل‌ها</span><span class="nav-badge" id="badgeProfiles">۶</span></button>
+      <button class="nav-item" data-page="logs"><svg class="icon"><use href="#i-term"/></svg><span data-i18n="logs">لاگ‌ها</span></button>
+
+      <div class="nav-label" data-i18n="grpConfig">پیکربندی</div>
+      <button class="nav-item" data-page="cores"><svg class="icon"><use href="#i-layers"/></svg><span data-i18n="cores">هسته‌ها</span></button>
+      <button class="nav-item" data-page="settings"><svg class="icon"><use href="#i-settings"/></svg><span data-i18n="settings">تنظیمات</span></button>
+      <button class="nav-item" data-page="about"><svg class="icon"><use href="#i-info"/></svg><span data-i18n="about">درباره</span></button>
+
+      <div class="drawer-foot">
+        <div class="core-mini">
+          <span class="dot" id="miniDot"></span>
+          <span id="miniText">sing-box · متوقف</span>
+        </div>
+      </div>
+    </nav>
+
+    <!-- ============ MAIN ============ -->
+    <main id="main">
+
+      <!-- ---------- HOME ---------- -->
+      <section class="page active" id="page-home">
+
+        <div class="status-head">
+          <span class="state-pill" id="statePill" data-state="disconnected">
+            <span class="dot" id="stateDot"></span><span id="stateText">قطع شده</span>
+          </span>
+          <div class="seg" role="group" aria-label="core">
+            <button id="btnCoreSB" aria-pressed="true"><span class="seg-dot"></span>sing-box</button>
+            <button id="btnCoreXR" aria-pressed="false"><span class="seg-dot"></span>Xray</button>
+          </div>
+          <div class="tb-spacer"></div>
+          <span class="chip" id="modeChip">TUN</span>
+          <span class="chip" id="verChip">v1.12.0</span>
+        </div>
+
+        <div class="card">
+          <div class="connect-wrap" id="connectWrap" data-state="disconnected">
+            <button class="cbtn" id="connectBtn" aria-label="connect">
+              <span class="halo"></span><span class="halo"></span><span class="halo"></span>
+              <svg class="cbtn-ring" viewBox="0 0 184 184">
+                <circle class="cbtn-track" cx="92" cy="92" r="87"/>
+                <circle class="cbtn-prog" id="ring" cx="92" cy="92" r="87"
+                        stroke-dasharray="546.6" stroke-dashoffset="546.6"/>
+              </svg>
+              <div class="cbtn-core">
+                <svg class="icon"><use href="#i-power" id="pwrIcon"/></svg>
+                <span class="cbtn-label" id="cbtnLabel">اتصال</span>
+              </div>
+            </button>
+            <div class="timer" id="timer">۰۰:۰۰:۰۰</div>
+            <div class="cbtn-hint" id="cbtnHint">برای شروع روی دایره بزن</div>
+          </div>
+        </div>
+
+        <div class="traffic">
+          <div class="tf">
+            <div class="tf-head"><svg class="icon icon-sm tf-up"><use href="#i-up"/></svg><span data-i18n="upload">آپلود</span></div>
+            <div class="tf-val" id="upVal">۰<small>B</small></div>
+            <div class="tf-speed" id="upSpd">↑ ۰ B/s</div>
+            <svg class="spark" id="sparkUp" viewBox="0 0 200 26" preserveAspectRatio="none"></svg>
+          </div>
+          <div class="tf">
+            <div class="tf-head"><svg class="icon icon-sm tf-down"><use href="#i-down"/></svg><span data-i18n="download">دانلود</span></div>
+            <div class="tf-val" id="dnVal">۰<small>B</small></div>
+            <div class="tf-speed" id="dnSpd">↓ ۰ B/s</div>
+            <svg class="spark" id="sparkDn" viewBox="0 0 200 26" preserveAspectRatio="none"></svg>
+          </div>
+        </div>
+
+        <div class="card card-pad" style="margin-top:14px">
+          <div class="card-title" data-i18n="activeProfile">پروفایل فعال</div>
+          <button class="prow" data-goto="profiles">
+            <div class="prow-ic"><svg class="icon"><use href="#i-bolt"/></svg></div>
+            <div>
+              <div class="prow-name" id="apName">DE-Fra-01 · VLESS</div>
+              <div class="prow-meta" id="apMeta">vless://…@fra1.example.net:443</div>
+            </div>
+            <div class="prow-end">
+              <div class="ping good" id="apPing">۴۸ ms</div>
+              <div style="font-size:10.5px;color:var(--text-mute);margin-top:3px" data-i18n="latency">تأخیر</div>
+            </div>
+          </button>
+        </div>
+      </section>
+
+      <!-- ---------- PROFILES ---------- -->
+      <section class="page" id="page-profiles">
+        <div class="page-head">
+          <h1 data-i18n="profiles">پروفایل‌ها</h1>
+          <p data-i18n="profilesSub">سرورها و کانفیگ‌های ذخیره‌شده‌ات. روی هر کدام بزن تا فعال بشه.</p>
+        </div>
+        <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap">
+          <button class="btn btn-primary btn-sm"><svg class="icon icon-sm"><use href="#i-plus"/></svg><span data-i18n="add">افزودن</span></button>
+          <button class="btn btn-sm"><svg class="icon icon-sm"><use href="#i-copy"/></svg><span data-i18n="importClip">درون‌ریزی از کلیپ‌بورد</span></button>
+          <button class="btn btn-sm"><svg class="icon icon-sm"><use href="#i-refresh"/></svg><span data-i18n="speedTest">تست سرعت</span></button>
+        </div>
+        <div id="profileList"></div>
+      </section>
+
+      <!-- ---------- LOGS ---------- -->
+      <section class="page" id="page-logs">
+        <div class="page-head">
+          <h1 data-i18n="logs">لاگ‌ها</h1>
+          <p data-i18n="logsSub">خروجی زنده‌ی هسته در حال اجرا.</p>
+        </div>
+        <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;align-items:center">
+          <button class="btn btn-sm" id="logClear"><svg class="icon icon-sm"><use href="#i-trash"/></svg><span data-i18n="clear">پاک کردن</span></button>
+          <button class="btn btn-sm" id="logPause"><svg class="icon icon-sm"><use href="#i-clock"/></svg><span data-i18n="pause">توقف</span></button>
+          <div class="tb-spacer" style="flex:1"></div>
+          <select class="sel" id="logLevel"><option>debug</option><option selected>info</option><option>warning</option><option>error</option></select>
+        </div>
+        <div class="log" id="logBox"></div>
+      </section>
+
+      <!-- ---------- CORES ---------- -->
+      <section class="page" id="page-cores">
+        <div class="page-head">
+          <h1 data-i18n="cores">هسته‌ها</h1>
+          <p data-i18n="coresSub">هسته‌ی فعال رو انتخاب کن. تنظیمات هر هسته جداگانه ذخیره می‌شه.</p>
+        </div>
+        <div class="core-grid">
+          <div class="core-card sel" id="cardSB">
+            <div class="core-logo" style="background:linear-gradient(145deg,#14b8a6,#0d9488)">SB</div>
+            <div class="cc-name">sing-box</div>
+            <div class="cc-ver" id="verSB">v1.12.0 · /opt/overx/sing-box</div>
+            <div class="cc-desc" data-i18n="sbDesc">هسته‌ی universal با پشتیبانی از TUN، rule-set و پروتکل‌های مدرن. Clash API برای آمار لحظه‌ای.</div>
+            <div class="cc-foot"><button class="btn btn-sm" id="checkSB"><svg class="icon icon-sm"><use href="#i-refresh"/></svg><span data-i18n="check">بررسی</span></button><span class="chip" id="sbStat">ready</span></div>
+          </div>
+          <div class="core-card" id="cardXR">
+            <div class="core-logo" style="background:linear-gradient(145deg,#6366f1,#4338ca)">XR</div>
+            <div class="cc-name">Xray</div>
+            <div class="cc-ver" id="verXR">v25.3.6 · /opt/overx/xray</div>
+            <div class="cc-desc" data-i18n="xrDesc">هسته‌ی پرسرعت با REALITY، XTLS و gRPC Stats API. مناسب کانفیگ‌های v2ray قدیمی.</div>
+            <div class="cc-foot"><button class="btn btn-sm" id="checkXR"><svg class="icon icon-sm"><use href="#i-refresh"/></svg><span data-i18n="check">بررسی</span></button><span class="chip" id="xrStat">ready</span></div>
+          </div>
+        </div>
+
+        <div class="card card-pad" style="margin-top:16px">
+          <div class="card-title" data-i18n="coreOptions">گزینه‌های هسته</div>
+          <div class="row"><div><div class="row-t" data-i18n="autoSwitchCore">تعویض خودکار هسته هنگام خطا</div><div class="row-s" data-i18n="autoSwitchCoreSub">اگر هسته‌ی اصلی بالا نیومد، هسته‌ی دیگر امتحان می‌شه</div></div><div class="row-end"><button class="sw" role="switch" aria-checked="false" data-sw></button></div></div>
+          <div class="row"><div><div class="row-t" data-i18n="keepAlive">نگه‌داشتن زنده (keep-alive)</div><div class="row-s" data-i18n="keepAliveSub">راه‌اندازی مجدد خودکار پس از کرش</div></div><div class="row-end"><button class="sw" role="switch" aria-checked="true" data-sw></button></div></div>
+        </div>
+      </section>
+
+      <!-- ---------- SETTINGS ---------- -->
+      <section class="page" id="page-settings">
+        <div class="page-head">
+          <h1 data-i18n="settings">تنظیمات</h1>
+          <p data-i18n="settingsSub">همه چیزِ غیر از صفحه‌ی اصلی اینجا پیدا می‌شه.</p>
+        </div>
+
+        <div class="card card-pad">
+          <div class="card-title" data-i18n="grpGeneral">عمومی</div>
+          <div class="row"><div><div class="row-t" data-i18n="theme">ظاهر</div><div class="row-s" data-i18n="themeSub">روشن، تاریک یا هماهنگ با سیستم</div></div>
+            <div class="row-end"><select class="sel" id="themeSel"><option value="dark" data-i18n="dark">تاریک</option><option value="light" data-i18n="light">روشن</option><option value="system" data-i18n="system">سیستم</option></select></div></div>
+          <div class="row"><div><div class="row-t" data-i18n="language">زبان</div><div class="row-s" data-i18n="languageSub">تغییر فوریِ جهت چیدمان</div></div>
+            <div class="row-end"><select class="sel" id="langSel"><option value="fa">فارسی</option><option value="en">English</option></select></div></div>
+          <div class="row"><div><div class="row-t" data-i18n="autoStart">اجرا در شروع سیستم</div><div class="row-s" data-i18n="autoStartSub">برنامه با بالا آمدن ویندوز/لینوکس اجرا می‌شه</div></div><div class="row-end"><button class="sw" role="switch" aria-checked="false" data-sw></button></div></div>
+          <div class="row"><div><div class="row-t" data-i18n="autoConnect">اتصال خودکار</div><div class="row-s" data-i18n="autoConnectSub">آخرین پروفایل هنگام اجرا وصل می‌شه</div></div><div class="row-end"><button class="sw" role="switch" aria-checked="true" data-sw></button></div></div>
+          <div class="row"><div><div class="row-t" data-i18n="minTray">کوچک کردن به tray</div><div class="row-s" data-i18n="minTraySub">بستن پنجره برنامه رو نمی‌بنده</div></div><div class="row-end"><button class="sw" role="switch" aria-checked="true" data-sw></button></div></div>
+        </div>
+
+        <div class="card card-pad">
+          <div class="card-title" data-i18n="grpNetwork">شبکه</div>
+          <div class="row"><div><div class="row-t" data-i18n="tunMode">حالت TUN</div><div class="row-s" data-i18n="tunModeSub">عبور دادن همه ترافیک سیستم (نیاز به دسترسی مدیر)</div></div><div class="row-end"><button class="sw" role="switch" aria-checked="true" data-sw id="swTun"></button></div></div>
+          <div class="row"><div><div class="row-t" data-i18n="sysProxy">پروکسی سیستم</div><div class="row-s" data-i18n="sysProxySub">تنظیم خودکار پروکسی در تنظیمات سیستم‌عامل</div></div><div class="row-end"><button class="sw" role="switch" aria-checked="true" data-sw></button></div></div>
+          <div class="row"><div><div class="row-t" data-i18n="mixedPort">پورت Mixed (SOCKS/HTTP)</div></div><div class="row-end"><input class="sel" type="number" value="2080" style="width:96px;text-align:center"></div></div>
+          <div class="row"><div><div class="row-t" data-i18n="routeMode">حالت مسیریابی</div></div>
+            <div class="row-end"><select class="sel" id="routeSel"><option data-i18n="rmRule">قاعده‌مند (Rule)</option><option data-i18n="rmGlobal">سراسری (Global)</option><option data-i18n="rmDirect">مستقیم (Direct)</option></select></div></div>
+          <div class="row"><div><div class="row-t" data-i18n="bypassLan">عبور از شبکه‌ی محلی</div><div class="row-s" data-i18n="bypassLanSub">آدرس‌های خصوصی همیشه مستقیم می‌رن</div></div><div class="row-end"><button class="sw" role="switch" aria-checked="true" data-sw></button></div></div>
+          <div class="row"><div><div class="row-t" data-i18n="sniff">Sniffing</div><div class="row-s" data-i18n="sniffSub">تشخیص دامنه برای مسیریابی دقیق‌تر</div></div><div class="row-end"><button class="sw" role="switch" aria-checked="true" data-sw></button></div></div>
+          <div class="row"><div><div class="row-t" data-i18n="mux">MUX (تجمیع اتصال)</div><div class="row-s" data-i18n="muxSub">کاهش تأخیر در ازای مصرف کمی بیشتر</div></div><div class="row-end"><button class="sw" role="switch" aria-checked="false" data-sw></button></div></div>
+          <div class="row"><div><div class="row-t" data-i18n="ipv6">IPv6</div></div><div class="row-end"><button class="sw" role="switch" aria-checked="false" data-sw></button></div></div>
+        </div>
+
+        <div class="card card-pad">
+          <div class="card-title" data-i18n="grpDns">DNS</div>
+          <div class="row"><div><div class="row-t" data-i18n="dnsMode">حالت DNS</div></div><div class="row-end"><select class="sel"><option data-i18n="dnsFake">Fake-IP</option><option data-i18n="dnsRemote">Remote</option><option data-i18n="dnsLocal">Local</option></select></div></div>
+          <div class="row"><div><div class="row-t" data-i18n="dnsRemote2">سرور DNS راه دور</div></div><div class="row-end"><input class="sel" type="text" value="https://1.1.1.1/dns-query" style="min-width:230px;direction:ltr"></div></div>
+          <div class="row"><div><div class="row-t" data-i18n="dnsLocal2">سرور DNS محلی</div></div><div class="row-end"><input class="sel" type="text" value="8.8.8.8" style="min-width:230px;direction:ltr"></div></div>
+        </div>
+
+        <div class="card card-pad">
+          <div class="card-title" data-i18n="grpAdvanced">پیشرفته</div>
+          <div class="row"><div><div class="row-t" data-i18n="logLevel">سطح لاگ</div></div><div class="row-end"><select class="sel"><option>debug</option><option selected>info</option><option>warning</option><option>error</option></select></div></div>
+          <div class="row"><div><div class="row-t" data-i18n="apiPort">پورت API محلی</div><div class="row-s" data-i18n="apiPortSub">sing-box → Clash API · Xray → gRPC</div></div><div class="row-end"><input class="sel" type="number" value="9090" style="width:96px;text-align:center"></div></div>
+          <div class="row"><div><div class="row-t" data-i18n="dataDir">پوشه‌ی داده</div></div><div class="row-end"><input class="sel" type="text" value="~/.local/share/overx" style="min-width:230px;direction:ltr"></div></div>
+          <div class="row"><div><div class="row-t" data-i18n="exportCfg">خروجی گرفتن از کانفیگ</div><div class="row-s" data-i18n="exportCfgSub">کانفیگ تولیدشده برای هر دو هسته</div></div><div class="row-end"><button class="btn btn-sm" id="exportBtn"><svg class="icon icon-sm"><use href="#i-copy"/></svg><span data-i18n="view">نمایش</span></button></div></div>
+          <div class="row"><div><div class="row-t" style="color:var(--danger)" data-i18n="reset">بازنشانی تنظیمات</div></div><div class="row-end"><button class="btn btn-sm btn-danger" data-i18n="resetBtn">بازنشانی</button></div></div>
+        </div>
+      </section>
+
+      <!-- ---------- ABOUT ---------- -->
+      <section class="page" id="page-about">
+        <div class="page-head"><h1 data-i18n="about">درباره</h1></div>
+        <div class="about-hero">
+          <div class="brand-mark"><svg class="icon" style="width:26px;height:26px"><use href="#i-box"/></svg></div>
+          <div>
+            <div style="font-size:19px;font-weight:750;letter-spacing:-.02em">OVERX</div>
+            <div style="font-size:12.5px;color:var(--text-dim);margin-top:3px" data-i18n="tagline2">یک رابط ساده برای دو هسته‌ی قدرتمند</div>
+            <div class="chip" style="margin-top:9px">v1.0.0 · Flutter</div>
+          </div>
+        </div>
+        <div class="card card-pad" style="margin-top:14px">
+          <dl class="kv">
+            <dt data-i18n="aVersion">نسخه برنامه</dt><dd>1.0.0 (1)</dd>
+            <dt data-i18n="aSdk">Flutter</dt><dd>3.24 · Dart 3.5</dd>
+            <dt data-i18n="aSb">sing-box</dt><dd id="abSb">1.12.0</dd>
+            <dt data-i18n="aXr">Xray</dt><dd id="abXr">25.3.6</dd>
+            <dt data-i18n="aChannel">کانال</dt><dd>stable</dd>
+          </dl>
+        </div>
+        <div class="card card-pad" style="margin-top:14px">
+          <div class="card-title" data-i18n="aCredits">قدردانی</div>
+          <div style="font-size:13px;color:var(--text-dim);line-height:2">
+            • <b>sing-box</b> — SagerNet · <span style="font-family:var(--font-num);font-size:11px">MIT</span><br>
+            • <b>Xray-core</b> — XTLS · <span style="font-family:var(--font-num);font-size:11px">MPL-2.0</span>
+          </div>
+          <div style="font-size:11.5px;color:var(--text-mute);margin-top:14px;line-height:1.8" data-i18n="disclaimer">
+            این ابزار صرفاً یک رابط مدیریتی برای هسته‌های متن‌باز است و خودش هیچ سرویس یا پروکسی ارائه نمی‌دهد.
+          </div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+</div>
+
+<div class="toast" id="toast"><svg class="icon icon-sm"><use href="#i-check"/></svg><span id="toastText"></span></div>
+
+<script>
+/* ============================================================
+   i18n
+   ============================================================ */
+const T = {
+  fa:{
+    tagline:"دو هسته، یک رابط", grpMain:"اصلی", grpConfig:"پیکربندی",
+    home:"خانه", profiles:"پروفایل‌ها", logs:"لاگ‌ها", cores:"هسته‌ها", settings:"تنظیمات", about:"درباره",
+    upload:"آپلود", download:"دانلود", activeProfile:"پروفایل فعال", latency:"تأخیر",
+    disconnected:"قطع شده", connecting:"در حال اتصال…", connected:"متصل",
+    connect:"اتصال", disconnect:"قطع اتصال",
+    startHint:"برای شروع روی دایره بزن", readyHint:"آماده اتصال",
+    profilesSub:"سرورها و کانفیگ‌های ذخیره‌شده‌ات. روی هر کدام بزن تا فعال بشه.",
+    add:"افزودن", importClip:"درون‌ریزی از کلیپ‌بورد", speedTest:"تست سرعت",
+    logsSub:"خروجی زنده‌ی هسته در حال اجرا.", clear:"پاک کردن", pause:"توقف", resume:"ادامه",
+    coresSub:"هسته‌ی فعال رو انتخاب کن. تنظیمات هر هسته جداگانه ذخیره می‌شه.",
+    sbDesc:"هسته‌ی universal با پشتیبانی از TUN، rule-set و پروتکل‌های مدرن. Clash API برای آمار لحظه‌ای.",
+    xrDesc:"هسته‌ی پرسرعت با REALITY، XTLS و gRPC Stats API. مناسب کانفیگ‌های v2ray قدیمی.",
+    check:"بررسی", coreOptions:"گزینه‌های هسته",
+    autoSwitchCore:"تعویض خودکار هسته هنگام خطا", autoSwitchCoreSub:"اگر هسته‌ی اصلی بالا نیومد، هسته‌ی دیگر امتحان می‌شه",
+    keepAlive:"نگه‌داشتن زنده (keep-alive)", keepAliveSub:"راه‌اندازی مجدد خودکار پس از کرش",
+    settingsSub:"همه چیزِ غیر از صفحه‌ی اصلی اینجا پیدا می‌شه.",
+    grpGeneral:"عمومی", theme:"ظاهر", themeSub:"روشن، تاریک یا هماهنگ با سیستم",
+    dark:"تاریک", light:"روشن", system:"سیستم",
+    language:"زبان", languageSub:"تغییر فوریِ جهت چیدمان",
+    autoStart:"اجرا در شروع سیستم", autoStartSub:"برنامه با بالا آمدن ویندوز/لینوکس اجرا می‌شه",
+    autoConnect:"اتصال خودکار", autoConnectSub:"آخرین پروفایل هنگام اجرا وصل می‌شه",
+    minTray:"کوچک کردن به tray", minTraySub:"بستن پنجره برنامه رو نمی‌بنده",
+    grpNetwork:"شبکه", tunMode:"حالت TUN", tunModeSub:"عبور دادن همه ترافیک سیستم (نیاز به دسترسی مدیر)",
+    sysProxy:"پروکسی سیستم", sysProxySub:"تنظیم خودکار پروکسی در تنظیمات سیستم‌عامل",
+    mixedPort:"پورت Mixed (SOCKS/HTTP)", routeMode:"حالت مسیریابی",
+    rmRule:"قاعده‌مند (Rule)", rmGlobal:"سراسری (Global)", rmDirect:"مستقیم (Direct)",
+    bypassLan:"عبور از شبکه‌ی محلی", bypassLanSub:"آدرس‌های خصوصی همیشه مستقیم می‌رن",
+    sniff:"Sniffing", sniffSub:"تشخیص دامنه برای مسیریابی دقیق‌تر",
+    mux:"MUX (تجمیع اتصال)", muxSub:"کاهش تأخیر در ازای مصرف کمی بیشتر", ipv6:"IPv6",
+    grpDns:"DNS", dnsMode:"حالت DNS", dnsFake:"Fake-IP", dnsRemote:"Remote", dnsLocal:"Local",
+    dnsRemote2:"سرور DNS راه دور", dnsLocal2:"سرور DNS محلی",
+    grpAdvanced:"پیشرفته", logLevel:"سطح لاگ", apiPort:"پورت API محلی", apiPortSub:"sing-box → Clash API · Xray → gRPC",
+    dataDir:"پوشه‌ی داده", exportCfg:"خروجی گرفتن از کانفیگ", exportCfgSub:"کانفیگ تولیدشده برای هر دو هسته",
+    view:"نمایش", reset:"بازنشانی تنظیمات", resetBtn:"بازنشانی",
+    tagline2:"یک رابط ساده برای دو هسته‌ی قدرتمند",
+    aVersion:"نسخه برنامه", aSdk:"Flutter", aSb:"sing-box", aXr:"Xray", aChannel:"کانال",
+    aCredits:"قدردانی",
+    disclaimer:"این ابزار صرفاً یک رابط مدیریتی برای هسته‌های متن‌باز است و خودش هیچ سرویس یا پروکسی ارائه نمی‌دهد.",
+    toastSaved:"ذخیره شد", toastCore:"هسته تغییر کرد", toastProfile:"پروفایل فعال شد",
+    toastReset:"تنظیمات بازنشانی شد", toastExport:"کانفیگ در کنسول چاپ شد"
+  },
+  en:{
+    tagline:"Two cores, one interface", grpMain:"Main", grpConfig:"Configuration",
+    home:"Home", profiles:"Profiles", logs:"Logs", cores:"Cores", settings:"Settings", about:"About",
+    upload:"Upload", download:"Download", activeProfile:"Active profile", latency:"latency",
+    disconnected:"Disconnected", connecting:"Connecting…", connected:"Connected",
+    connect:"Connect", disconnect:"Disconnect",
+    startHint:"Tap the circle to start", readyHint:"Ready to connect",
+    profilesSub:"Your saved servers and configs. Tap any of them to activate.",
+    add:"Add", importClip:"Import from clipboard", speedTest:"Speed test",
+    logsSub:"Live output of the running core.", clear:"Clear", pause:"Pause", resume:"Resume",
+    coresSub:"Pick the active core. Each core keeps its own settings.",
+    sbDesc:"Universal core with TUN, rule-sets and modern protocols. Clash API for live traffic stats.",
+    xrDesc:"High-performance core with REALITY, XTLS and a gRPC Stats API. Great for legacy v2ray configs.",
+    check:"Check", coreOptions:"Core options",
+    autoSwitchCore:"Auto-switch core on failure", autoSwitchCoreSub:"If the primary core fails to start, the other one is tried",
+    keepAlive:"Keep alive", keepAliveSub:"Automatically restart after a crash",
+    settingsSub:"Everything that isn't the home screen lives here.",
+    grpGeneral:"General", theme:"Appearance", themeSub:"Light, dark or follow the system",
+    dark:"Dark", light:"Light", system:"System",
+    language:"Language", languageSub:"Instantly flips layout direction",
+    autoStart:"Launch at startup", autoStartSub:"Starts with Windows/Linux login",
+    autoConnect:"Auto connect", autoConnectSub:"Connects the last profile on launch",
+    minTray:"Minimize to tray", minTraySub:"Closing the window won't quit the app",
+    grpNetwork:"Network", tunMode:"TUN mode", tunModeSub:"Route all system traffic (needs admin rights)",
+    sysProxy:"System proxy", sysProxySub:"Set the OS proxy automatically",
+    mixedPort:"Mixed port (SOCKS/HTTP)", routeMode:"Routing mode",
+    rmRule:"Rule", rmGlobal:"Global", rmDirect:"Direct",
+    bypassLan:"Bypass LAN", bypassLanSub:"Private addresses always go direct",
+    sniff:"Sniffing", sniffSub:"Domain detection for more accurate routing",
+    mux:"MUX (multiplexing)", muxSub:"Lower latency at a small bandwidth cost", ipv6:"IPv6",
+    grpDns:"DNS", dnsMode:"DNS mode", dnsFake:"Fake-IP", dnsRemote:"Remote", dnsLocal:"Local",
+    dnsRemote2:"Remote DNS server", dnsLocal2:"Local DNS server",
+    grpAdvanced:"Advanced", logLevel:"Log level", apiPort:"Local API port", apiPortSub:"sing-box → Clash API · Xray → gRPC",
+    dataDir:"Data directory", exportCfg:"Export config", exportCfgSub:"Generated config for both cores",
+    view:"View", reset:"Reset settings", resetBtn:"Reset",
+    tagline2:"One clean interface for two powerful cores",
+    aVersion:"App version", aSdk:"Flutter", aSb:"sing-box", aXr:"Xray", aChannel:"Channel",
+    aCredits:"Credits",
+    disclaimer:"This is only a management interface for open-source cores; it provides no service or proxy of its own.",
+    toastSaved:"Saved", toastCore:"Core switched", toastProfile:"Profile activated",
+    toastReset:"Settings reset", toastExport:"Config printed to console"
+  }
+};
+let LANG = "fa";
+const t = k => (T[LANG][k] ?? T.en[k] ?? k);
+const FA = d => {
+  const s = String(d);
+  return LANG === "fa" ? s.replace(/\d/g, c => "۰۱۲۳۴۵۶۷۸۹"[+c]) : s;
+};
+
+function applyI18n(){
+  document.documentElement.lang = LANG;
+  document.documentElement.dir  = LANG === "fa" ? "rtl" : "ltr";
+  document.querySelectorAll("[data-i18n]").forEach(el => { el.textContent = t(el.dataset.i18n); });
+  document.querySelectorAll("#page-settings select.sel option[data-i18n]").forEach(o => o.textContent = t(o.dataset.i18n));
+  document.querySelectorAll("#page-cores [data-i18n]").forEach(el => { el.textContent = t(el.dataset.i18n); });
+  renderState();
+  renderProfiles();
+  const active = document.querySelector(".nav-item.active");
+  if (active) $("#tbTitle").textContent = t(active.dataset.page);
+}
+
+/* ============================================================
+   State
+   ============================================================ */
+const CORES = {
+  sb:{ key:"sb", name:"sing-box", ver:"1.12.0", api:"9090", color:"#14b8a6" },
+  xr:{ key:"xr", name:"Xray",     ver:"25.3.6", api:"8080", color:"#6366f1" }
+};
+const PROFILES = [
+  { id:1, name:"DE-Fra-01",   proto:"VLESS",   host:"fra1.example.net",  port:443, ping:48,  type:"reality" },
+  { id:2, name:"NL-Ams-02",   proto:"Hysteria2",host:"ams2.example.net", port:443, ping:63,  type:"hy2" },
+  { id:3, name:"US-Lax-03",   proto:"VMess",   host:"lax3.example.net",  port:443, ping:158, type:"ws" },
+  { id:4, name:"TR-Ist-04",   proto:"Trojan",  host:"ist4.example.net",  port:443, ping:92,  type:"grpc" },
+  { id:5, name:"FR-Par-05",   proto:"Shadowsocks",host:"par5.example.net",port:8388,ping:71, type:"ss" },
+  { id:6, name:"SG-Sin-06",   proto:"VLESS",   host:"sin6.example.net",  port:443, ping:210, type:"tls" }
+];
+let S = {
+  core:"sb",
+  state:"disconnected",     // disconnected | connecting | connected
+  profile:PROFILES[0],
+  up:0, dn:0, upSpd:0, dnSpd:0,
+  startedAt:0, elapsed:0,
+  paused:false
+};
+const hist = { up:[], dn:[] };
+const CIRC = 2 * Math.PI * 87;
+
+/* ============================================================
+   Elements
+   ============================================================ */
+const $ = s => document.querySelector(s);
+const el = {
+  wrap:$("#connectWrap"), btn:$("#connectBtn"), ring:$("#ring"), label:$("#cbtnLabel"), hint:$("#cbtnHint"),
+  timer:$("#timer"), pill:$("#statePill"), pillText:$("#stateText"), dot:$("#stateDot"),
+  upVal:$("#upVal"), dnVal:$("#dnVal"), upSpd:$("#upSpd"), dnSpd:$("#dnSpd"),
+  sparkUp:$("#sparkUp"), sparkDn:$("#sparkDn"),
+  miniDot:$("#miniDot"), miniText:$("#miniText"),
+  apName:$("#apName"), apMeta:$("#apMeta"), apPing:$("#apPing"),
+  verChip:$("#verChip"), modeChip:$("#modeChip"), logBox:$("#logBox")
+};
+el.ring.style.strokeDasharray = CIRC;
+el.ring.style.strokeDashoffset = CIRC;
+
+/* ============================================================
+   Formatting
+   ============================================================ */
+function bytes(n){
+  const u = ["B","KB","MB","GB","TB"];
+  let i = 0; n = Math.max(0, n);
+  while (n >= 1024 && i < u.length - 1){ n /= 1024; i++; }
+  return FA(n.toFixed(i === 0 ? 0 : (n < 10 ? 2 : 1))) + `<small>${u[i]}</small>`;
+}
+function speed(n){
+  const u = ["B/s","KB/s","MB/s","GB/s"];
+  let i = 0;
+  while (n >= 1024 && i < u.length - 1){ n /= 1024; i++; }
+  return FA(n.toFixed(i === 0 ? 0 : 1)) + " " + u[i];
+}
+function hms(s){
+  const h = Math.floor(s/3600), m = Math.floor(s%3600/60), sec = Math.floor(s%60);
+  return FA([h,m,sec].map(v => String(v).padStart(2,"0")).join(":"));
+}
+
+/* ============================================================
+   Render
+   ============================================================ */
+function renderState(){
+  const core = CORES[S.core];
+  el.wrap.dataset.state = S.state;
+  el.pill.dataset.state = S.state;
+  el.pillText.textContent = t(S.state);
+  el.label.textContent = S.state === "connected" ? t("disconnect") : t("connect");
+  el.hint.textContent = S.state === "disconnected" ? t("startHint") : t("readyHint");
+  el.verChip.textContent = "v" + core.ver;
+  el.miniText.textContent = core.name + " · " +
+    (S.state === "connected" ? t("connected") : S.state === "connecting" ? t("connecting") : t("disconnected"));
+  el.miniDot.className = "dot" + (S.state === "connected" ? " on" : S.state === "connecting" ? " busy" : "");
+  el.dot.className = "dot" + (S.state === "connected" ? " on" : S.state === "connecting" ? " busy" : "");
+  document.querySelector("#pwrIcon").setAttribute("href", S.state === "connected" ? "#i-shield" : "#i-power");
+}
+
+function renderTraffic(){
+  el.upVal.innerHTML = bytes(S.up);
+  el.dnVal.innerHTML = bytes(S.dn);
+  el.upSpd.textContent = "↑ " + speed(S.upSpd);
+  el.dnSpd.textContent = "↓ " + speed(S.dnSpd);
+  drawSpark(el.sparkUp, hist.up, "var(--warn)");
+  drawSpark(el.sparkDn, hist.dn, "var(--primary)");
+}
+function drawSpark(svg, data, color){
+  if (!data.length){ svg.innerHTML = ""; return; }
+  const w = 200, h = 26, max = Math.max(1, ...data);
+  const pts = data.map((v,i) => `${(i/(data.length-1||1))*w},${h - (v/max)*(h-4) - 2}`);
+  svg.innerHTML =
+    `<path d="M${pts.join(" L")}" fill="none" stroke="${color}" stroke-width="1.6" stroke-linejoin="round" opacity=".95"/>
+     <path d="M0,${h} L${pts.join(" L")} L${w},${h} Z" fill="${color}" opacity=".12"/>`;
+}
+
+function renderProfiles(){
+  const box = $("#profileList");
+  box.innerHTML = PROFILES.map(p => {
+    const cls = p.ping < 80 ? "good" : p.ping < 150 ? "mid" : "bad";
+    return `<div class="pcard ${p.id === S.profile.id ? "sel" : ""}" data-pid="${p.id}">
+      <div class="prow-ic"><svg class="icon"><use href="#i-bolt"/></svg></div>
+      <div style="flex:1;min-width:0">
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+          <span class="prow-name">${p.name}</span>
+          <span class="chip">${p.proto}</span><span class="chip">${p.type}</span>
+          ${p.id === S.profile.id ? `<span class="chip" style="background:var(--primary);color:var(--on-primary)">${LANG==="fa"?"فعال":"active"}</span>`:""}
+        </div>
+        <div class="prow-meta">${p.host}:${p.port}</div>
+      </div>
+      <div style="text-align:end;flex:none">
+        <div class="ping ${cls}">${FA(p.ping)} ms</div>
+        <div style="font-size:10.5px;color:var(--text-mute);margin-top:3px">${t("latency")}</div>
+      </div>
+    </div>`;
+  }).join("");
+  box.querySelectorAll(".pcard").forEach(c => c.onclick = () => {
+    S.profile = PROFILES.find(p => p.id === +c.dataset.pid);
+    el.apName.textContent = `${S.profile.name} · ${S.profile.proto}`;
+    el.apMeta.textContent = `${S.profile.proto.toLowerCase()}://…@${S.profile.host}:${S.profile.port}`;
+    el.apPing.className = "ping " + (S.profile.ping < 80 ? "good" : S.profile.ping < 150 ? "mid" : "bad");
+    el.apPing.textContent = FA(S.profile.ping) + " ms";
+    renderProfiles();
+    toast(t("toastProfile"));
+    log("info", `profile switched → ${S.profile.name} (${S.profile.proto})`);
+  });
+  $("#badgeProfiles").textContent = FA(PROFILES.length);
+}
+
+/* ============================================================
+   Logs
+   ============================================================ */
+const NOW = () => new Date().toTimeString().slice(0,8);
+function log(level, msg){
+  if (S.paused) return;
+  const box = el.logBox;
+  const line = document.createElement("div");
+  line.innerHTML = `<span class="t">${NOW()}</span> <span class="${level[0]}">${level.toUpperCase().padEnd(5)}</span> ${msg}`;
+  box.appendChild(line);
+  while (box.children.length > 400) box.removeChild(box.firstChild);
+  box.scrollTop = box.scrollHeight;
+}
+
+/* ============================================================
+   Engine simulation
+   ============================================================ */
+let timers = {};
+function startEngine(){
+  const core = CORES[S.core];
+  S.state = "connecting"; renderState();
+  el.timer.textContent = "۰۰:۰۰:۰۰";
+
+  log("info", `starting core: ${core.name} v${core.ver}`);
+  log("info", `config → ~/.local/share/overx/${core.key}.json`);
+  if (core.key === "sb") log("debug", "experimental.clash_api = 127.0.0.1:" + core.api);
+  else { log("debug", `api.listen = 127.0.0.1:${core.api} [StatsService, RoutingService]`); }
+
+  // fake progress ring
+  let p = 0;
+  timers.ring = setInterval(() => {
+    p = Math.min(1, p + 0.045 + Math.random() * 0.05);
+    el.ring.style.strokeDashoffset = CIRC * (1 - p);
+    if (p >= 1) clearInterval(timers.ring);
+  }, 60);
+
+  timers.conn = setTimeout(() => {
+    S.state = "connected"; S.startedAt = Date.now(); S.up = 0; S.dn = 0;
+    hist.up = []; hist.dn = [];
+    renderState();
+    log("info", `${core.name} started (pid ${Math.floor(Math.random()*40000+1000)})`);
+    log("info", `outbound/${S.profile.proto} → ${S.profile.host}:${S.profile.port}`);
+    log("debug", `traffic source: ${core.key === "sb" ? `ws://127.0.0.1:${core.api}/traffic` : `grpc 127.0.0.1:${core.api}`}`);
+    startTraffic();
+  }, 1500);
+}
+function stopEngine(){
+  clearTimeout(timers.conn); clearInterval(timers.ring); stopTraffic();
+  S.state = "disconnected"; renderState();
+  el.ring.style.strokeDashoffset = CIRC;
+  log("info", "core stopped");
+  log("info", `session: ↑ ${bytes(S.up).replace(/<[^>]+>/g,"")} · ↓ ${bytes(S.dn).replace(/<[^>]+>/g,"")} · ${hms(S.elapsed)}`);
+}
+function startTraffic(){
+  timers.clock = setInterval(() => {
+    S.elapsed = Math.floor((Date.now() - S.startedAt) / 1000);
+    el.timer.textContent = hms(S.elapsed);
+  }, 1000);
+  timers.traffic = setInterval(() => {
+    const base = S.core === "sb" ? 1 : 1.15;
+    S.upSpd = Math.max(0, S.upSpd * 0.72 + Math.random() * 220000 * base);
+    S.dnSpd = Math.max(0, S.dnSpd * 0.72 + Math.random() * 1400000 * base);
+    S.up += S.upSpd; S.dn += S.dnSpd;
+    hist.up.push(S.upSpd); hist.dn.push(S.dnSpd);
+    if (hist.up.length > 48){ hist.up.shift(); hist.dn.shift(); }
+    renderTraffic();
+  }, 1000);
+  timers.logs = setInterval(() => {
+    const msgs = [
+      ["debug", `router: sniffed domain ${["cdn.jsdelivr.net","api.github.com","fonts.gstatic.com","static.cloudflare.com"][Math.floor(Math.random()*4)]}`],
+      ["info",  `outbound/${S.profile.proto} [${S.profile.host}] ${Math.floor(Math.random()*200+40)}ms`],
+      ["debug", `dns: exchanged ${Math.floor(Math.random()*50)} queries`],
+      ["warn",  `connection reset by peer (retry ${Math.floor(Math.random()*3)+1})`]
+    ];
+    if (Math.random() < .55){ const m = msgs[Math.floor(Math.random()*msgs.length)]; log(m[0], m[1]); }
+  }, 2600);
+}
+function stopTraffic(){
+  clearInterval(timers.clock); clearInterval(timers.traffic); clearInterval(timers.logs);
+  S.upSpd = S.dnSpd = 0;
+  renderTraffic();
+}
+
+el.btn.onclick = () => {
+  if (S.state === "connected") stopEngine();
+  else if (S.state === "disconnected") startEngine();
+};
+
+/* ============================================================
+   Core switch
+   ============================================================ */
+function setCore(k){
+  if (S.core === k) return;
+  if (S.state === "connected"){ stopEngine(); }
+  S.core = k;
+  $("#btnCoreSB").setAttribute("aria-pressed", k === "sb");
+  $("#btnCoreXR").setAttribute("aria-pressed", k === "xr");
+  $("#cardSB").classList.toggle("sel", k === "sb");
+  $("#cardXR").classList.toggle("sel", k === "xr");
+  renderState();
+  log("info", `active core → ${CORES[k].name}`);
+  toast(t("toastCore"));
+}
+$("#btnCoreSB").onclick = () => setCore("sb");
+$("#btnCoreXR").onclick = () => setCore("xr");
+$("#cardSB").onclick = e => { if (!e.target.closest("button")) setCore("sb"); };
+$("#cardXR").onclick = e => { if (!e.target.closest("button")) setCore("xr"); };
+
+/* ============================================================
+   Navigation
+   ============================================================ */
+const PAGES = ["home","profiles","logs","cores","settings","about"];
+function goto(page){
+  PAGES.forEach(p => $("#page-" + p).classList.toggle("active", p === page));
+  document.querySelectorAll(".nav-item").forEach(b => b.classList.toggle("active", b.dataset.page === page));
+  const key = { home:"home", profiles:"profiles", logs:"logs", cores:"cores", settings:"settings", about:"about" }[page];
+  $("#tbTitle").textContent = t(key);
+  $("#tbSub").textContent = "OVERX — sing-box & Xray";
+  document.body.classList.remove("nav-open");
+  $("#main").scrollTop = 0;
+}
+document.querySelectorAll(".nav-item").forEach(b => b.onclick = () => goto(b.dataset.page));
+document.querySelectorAll("[data-goto]").forEach(b => b.onclick = () => goto(b.dataset.goto));
+$("#menuBtn").onclick = () => document.body.classList.toggle("nav-open");
+$("#scrim").onclick = () => document.body.classList.remove("nav-open");
+document.addEventListener("keydown", e => { if (e.key === "Escape") document.body.classList.remove("nav-open"); });
+
+/* ============================================================
+   Theme + Language
+   ============================================================ */
+function setTheme(v){
+  document.documentElement.dataset.theme = v;
+  $("#themeBtn").querySelector("use").setAttribute("href", v === "light" ? "#i-moon" : "#i-sun");
+  $("#themeSel").value = v;
+}
+$("#themeBtn").onclick = () =>
+  setTheme(document.documentElement.dataset.theme === "dark" ? "light" : "dark");
+$("#themeSel").onchange = e => setTheme(e.target.value);
+
+$("#langBtn").onclick = () => setLang(LANG === "fa" ? "en" : "fa");
+function setLang(v){ LANG = v; $("#langSel").value = v; applyI18n(); }
+$("#langSel").onchange = e => setLang(e.target.value);
+
+/* ============================================================
+   Switches
+   ============================================================ */
+document.querySelectorAll("[data-sw]").forEach(sw => sw.onclick = () => {
+  sw.setAttribute("aria-checked", sw.getAttribute("aria-checked") === "true" ? "false" : "true");
+  if (sw.id === "swTun") $("#modeChip").textContent = sw.getAttribute("aria-checked") === "true" ? "TUN" : "PROXY";
+});
+
+/* ============================================================
+   Misc actions
+   ============================================================ */
+let toastT;
+function toast(msg){
+  $("#toastText").textContent = msg;
+  $("#toast").classList.add("show");
+  clearTimeout(toastT);
+  toastT = setTimeout(() => $("#toast").classList.remove("show"), 2000);
+}
+$("#logClear").onclick = () => { el.logBox.innerHTML = ""; };
+$("#logPause").onclick = e => {
+  S.paused = !S.paused;
+  e.currentTarget.querySelector("span").textContent = S.paused ? t("resume") : t("pause");
+};
+$("#exportBtn").onclick = () => {
+  console.log("=== sing-box config ===\n" + JSON.stringify(sampleConfig("sb"), null, 2));
+  console.log("=== xray config ===\n" + JSON.stringify(sampleConfig("xr"), null, 2));
+  toast(t("toastExport"));
+};
+$("[data-i18n='resetBtn']").onclick = () => toast(t("toastReset"));
+$("#checkSB").onclick = e => { e.stopPropagation(); $("#sbStat").textContent = "ok · 1.12.0"; toast("sing-box 1.12.0"); };
+$("#checkXR").onclick = e => { e.stopPropagation(); $("#xrStat").textContent = "ok · 25.3.6"; toast("Xray 25.3.6"); };
+
+function sampleConfig(kind){
+  if (kind === "sb") return {
+    log:{ level:"info", timestamp:true },
+    dns:{ servers:[{ tag:"remote", type:"https", server:"1.1.1.1", detour:"proxy" }] },
+    inbounds:[{ type:"tun", tag:"tun-in", address:["172.19.0.1/30"], auto_route:true, strict_route:true }],
+    outbounds:[
+      { type:S.profile.proto.toLowerCase(), tag:"proxy", server:S.profile.host, server_port:S.profile.port },
+      { type:"direct", tag:"direct" }
+    ],
+    route:{ rules:[], final:"proxy" },
+    experimental:{ clash_api:{ external_controller:"127.0.0.1:9090" }, cache_file:{ enabled:true } }
+  };
+  return {
+    log:{ loglevel:"info" },
+    stats:{},
+    api:{ tag:"api", listen:"127.0.0.1:8080", services:["StatsService","RoutingService"] },
+    policy:{ system:{ statsInboundUplink:true, statsInboundDownlink:true, statsOutboundUplink:true, statsOutboundDownlink:true } },
+    inbounds:[{ tag:"socks-in", port:2080, listen:"127.0.0.1", protocol:"socks" }],
+    outbounds:[
+      { tag:"proxy", protocol:S.profile.proto.toLowerCase() },
+      { tag:"direct", protocol:"freedom" },
+      { tag:"api", protocol:"blackhole" }
+    ],
+    routing:{ rules:[{ type:"field", inboundTag:["api"], outboundTag:"api" }] }
+  };
+}
+
+/* ============================================================
+   Boot
+   ============================================================ */
+setTheme("dark");
+setLang("fa");
+renderProfiles();
+renderState();
+renderTraffic();
+log("info", "OVERX v1.0.0 ready");
+log("info", "active core: sing-box");
+log("debug", "detected platforms: windows, linux, android, macos");
+</script>
+</body>
+</html>

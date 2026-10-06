@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- صفحه‌ی آغازین: نشانه + نامِ برنامه (ساخته‌شده با tool/gen_icons.py) -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:drawable="?android:colorBackground" />
+
+    <!-- نسخه‌ی شب (drawable-night-*) جوهرِ سفید دارد -->
+    <item>
+        <bitmap
+            android:gravity="center"
+            android:src="@drawable/launch_logo" />
+    </item>
+</layer-list>

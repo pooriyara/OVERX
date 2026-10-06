@@ -1,0 +1,79 @@
+name: libbox
+
+# ساختِ libbox.aar — کتابخانه‌ی بومیِ sing-box برای TUNِ اندروید.
+#
+# چرا یک workflow یِ جدا؟
+#   ۱. ساختِ چهار معماری با هم بیش از ۴ گیگابایت رم می‌خواهد؛ روی ماشین‌های
+#      کوچک بی‌ثبات است و نباید هر کامیت را کند کند.
+#   ۲. خروجی‌اش یک فایلِ چندده‌مگابایتی است که نباید داخلِ مخزن باشد.
+#   ۳. زمان‌بر است (ده‌ها دقیقه).
+#
+# پس: فقط دستی (workflow_dispatch) اجرا می‌شود و خروجی را به عنوان artifact
+# می‌گذارد تا بعداً با `flutter build apk` مصرف شود.
+#
+# موقع انتشار لازم نیست این را دستی بزنید: release.yml همان ساخت را خودش
+# انجام می‌دهد. این workflow برای آزمایشِ تنها و ساختِ معماریِ دلخواه است.
+
+on:
+  workflow_dispatch:
+    inputs:
+      platform:
+        description: 'معماری‌ها (gomobile -target)؛ خالی = هر چهار معماری'
+        required: false
+        default: ''
+
+permissions:
+  contents: write
+
+jobs:
+  build-libbox:
+    runs-on: ubuntu-latest
+    steps:
+      - name: دریافت کد
+        uses: actions/checkout@v4
+
+      - name: نصب Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.25'
+          cache: true
+
+      # sing-box دقیقاً جاوای ۱۷ می‌خواهد (خروجیِ `java -version` را نگاه
+      # می‌کند و با «java version should be openjdk 17» بیرون می‌زند).
+      - name: نصب JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: نصب Android NDK
+        id: ndk
+        uses: nttld/setup-ndk@v1
+        with:
+          ndk-version: r28b
+          add-to-path: false
+
+      - name: ساخت libbox.aar
+        env:
+          ANDROID_NDK_HOME: ${{ steps.ndk.outputs.ndk-path }}
+          LIBBOX_PLATFORM: ${{ github.event.inputs.platform }}
+        run: ./tool/build_libbox_ci.sh
+
+      - name: فهرستِ معماری‌هایِ داخلِ AAR
+        run: |
+          unzip -Z1 android/libs/libbox.aar | grep '^jni/' || true
+          ls -lh android/libs/libbox.aar
+
+      # مهم‌ترین گام: استاب‌های دست‌نویسِ tool/libbox_stub کنار می‌روند و
+      # کاتلین در برابر APIِ **واقعیِ** gobind کامپایل می‌شود. هر ناهماهنگیِ
+      # قرارداد (نام، نوع، مقدارِ بازگشتی) همین‌جا بیرون می‌زند.
+      - name: کامپایلِ کاتلین در برابر APIِ واقعی
+        run: ./tool/check_android.sh
+
+      - name: بارگذاریِ AAR
+        uses: actions/upload-artifact@v4
+        with:
+          name: libbox-aar
+          path: android/libs/libbox.aar
+          if-no-files-found: error
+          retention-days: 30

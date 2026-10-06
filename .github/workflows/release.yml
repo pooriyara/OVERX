@@ -1,0 +1,264 @@
+name: release
+
+# =============================================================================
+# ساخت و انتشارِ نسخه — اندروید + ویندوز
+#
+# چرا این workflow لازم است؟
+#   * ساخت ویندوزِ Flutter روی لینوکس ممکن نیست (به MSVC/Visual Studio نیاز
+#     دارد) و ساخت APK هم رمِ زیادی می‌خواهد. رانرهای گیت‌هاب هر دو را دارند.
+#   * انتشار یعنی: تگ بزن، بقیه خودش انجام می‌شود.
+#
+# چطور کار می‌کند:
+#   git tag v1.0.0 && git push origin v1.0.0
+# یا دستی از تب Actions → release → Run workflow.
+#
+# امضای اندروید: اگر این secret ها را بگذارید، APK/AAB با کلیدِ خودتان امضا
+# می‌شود؛ وگرنه با کلیدِ دیباگ (روی دستگاه نصب می‌شود، ولی برای Play Store
+# معتبر نیست):
+#   ANDROID_KEYSTORE_BASE64   -> `base64 -w0 overx-release.jks`
+#   ANDROID_KEYSTORE_PASSWORD
+#   ANDROID_KEY_ALIAS
+#   ANDROID_KEY_PASSWORD
+# =============================================================================
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+env:
+  JAVA_VERSION: '17'
+
+jobs:
+  # -------------------------------------------------------------------------
+  # ۱) libbox.aar — کتابخانه‌ی بومیِ sing-box برای TUNِ اندروید.
+  #    بدون آن APK ساخته می‌شود ولی sing-box روی اندروید TUN ندارد.
+  # -------------------------------------------------------------------------
+  libbox:
+    name: libbox.aar (اندروید native)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.25'
+          cache: true
+
+      # sing-box دقیقاً جاوای ۱۷ می‌خواهد.
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: ${{ env.JAVA_VERSION }}
+
+      - name: نصب Android NDK
+        id: ndk
+        uses: nttld/setup-ndk@v1
+        with:
+          ndk-version: r28b
+          add-to-path: false
+
+      - name: ساخت libbox.aar
+        env:
+          ANDROID_NDK_HOME: ${{ steps.ndk.outputs.ndk-path }}
+        run: ./tool/build_libbox_ci.sh
+
+      - name: معماری‌های داخلِ AAR
+        run: |
+          unzip -Z1 android/libs/libbox.aar | grep '^jni/' || true
+          ls -lh android/libs/libbox.aar
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: libbox-aar
+          path: android/libs/libbox.aar
+          if-no-files-found: error
+          retention-days: 7
+
+  # -------------------------------------------------------------------------
+  # ۲) اندروید — APK تفکیک‌شده بر اساسِ معماری + AAB برای Play Store
+  # -------------------------------------------------------------------------
+  android:
+    name: اندروید (APK + AAB)
+    runs-on: ubuntu-latest
+    needs: libbox
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: ${{ env.JAVA_VERSION }}
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+
+      - name: نسخه از pubspec.yaml
+        id: ver
+        run: |
+          v="$(grep -m1 '^version:' pubspec.yaml | awk '{print $2}')"
+          echo "version=${v%%+*}" >> "$GITHUB_OUTPUT"
+          echo "نسخه: ${v%%+*}"
+
+      - name: libbox.aar از گامِ قبل
+        uses: actions/download-artifact@v4
+        with:
+          name: libbox-aar
+          path: android/libs
+
+      - name: واکشیِ بسته‌ها
+        run: flutter pub get
+
+      # همان دروازه‌ای که در CI معمولی هم اجرا می‌شود — این‌جا در برابر APIِ
+      # واقعیِ gobind، چون AAR را داریم.
+      - name: کامپایلِ لایه‌ی اندروید در برابر APIِ واقعیِ libbox
+        run: ./tool/check_android.sh
+
+      - name: آماده‌سازیِ امضا (اختیاری)
+        run: |
+          if [ -n "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" ]; then
+            echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 -d > android/overx-release.jks
+            {
+              echo "storeFile=overx-release.jks"
+              echo "storePassword=${{ secrets.ANDROID_KEYSTORE_PASSWORD }}"
+              echo "keyAlias=${{ secrets.ANDROID_KEY_ALIAS }}"
+              echo "keyPassword=${{ secrets.ANDROID_KEY_PASSWORD }}"
+            } > android/key.properties
+            echo "SIGNING=release" >> "$GITHUB_ENV"
+            echo "APK با کلیدِ ریلیز امضا می‌شود."
+          else
+            echo "SIGNING=debug" >> "$GITHUB_ENV"
+            echo "::warning::کلیدِ امضا در secrets نیست — APK با کلیدِ دیباگ امضا می‌شود."
+          fi
+
+      - name: ساختِ APK (تفکیک بر اساسِ معماری)
+        run: flutter build apk --release --split-per-abi
+
+      - name: ساختِ AAB (برای Play Store)
+        run: flutter build appbundle --release
+
+      - name: نام‌گذاریِ خروجی‌ها
+        run: |
+          mkdir -p dist
+          V="${{ steps.ver.outputs.version }}"
+          for f in build/app/outputs/flutter-apk/app-*-release.apk; do
+            [ -e "$f" ] || continue
+            abi="$(basename "$f" | sed -E 's/^app-(.*)-release\.apk$/\1/')"
+            cp "$f" "dist/overx-android-${abi}-v${V}.apk"
+          done
+          cp build/app/outputs/bundle/release/app-release.aab \
+             "dist/overx-android-v${V}.aab"
+          ls -lh dist/
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: android-${{ env.SIGNING }}-signed
+          path: dist/*
+          if-no-files-found: error
+
+  # -------------------------------------------------------------------------
+  # ۳) ویندوز — پوشه‌ی Release به‌صورت ZIPِ پرتابل
+  # -------------------------------------------------------------------------
+  windows:
+    name: ویندوز (ZIP)
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+
+      - name: نسخه از pubspec.yaml
+        id: ver
+        shell: bash
+        run: |
+          v="$(grep -m1 '^version:' pubspec.yaml | awk '{print $2}')"
+          echo "version=${v%%+*}" >> "$GITHUB_OUTPUT"
+
+      - name: واکشیِ بسته‌ها
+        run: flutter pub get
+
+      - name: ساختِ ویندوز
+        run: flutter build windows --release
+
+      - name: بسته‌بندیِ ZIP
+        shell: pwsh
+        run: |
+          $v = "${{ steps.ver.outputs.version }}"
+          $src = "build/windows/x64/runner/Release"
+          if (-not (Test-Path $src)) { $src = "build/windows/runner/Release" }
+          Get-ChildItem $src -Recurse | Select-Object FullName, Length
+          New-Item -ItemType Directory -Force -Path dist | Out-Null
+          Compress-Archive -Path "$src/*" -DestinationPath "dist/overx-windows-x64-v$v.zip"
+          Get-ChildItem dist
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: windows
+          path: dist/*
+          if-no-files-found: error
+
+  # -------------------------------------------------------------------------
+  # ۴) انتشار — فایل‌های کاربرپسند روی GitHub Releases
+  #    (عمداً libbox-aar را برنمی‌داریم: واسطه‌ی ساخت است، نه خروجیِ کاربر.)
+  # -------------------------------------------------------------------------
+  release:
+    name: انتشار روی GitHub Releases
+    runs-on: ubuntu-latest
+    needs: [android, windows]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: نسخه از pubspec.yaml
+        id: ver
+        run: |
+          v="$(grep -m1 '^version:' pubspec.yaml | awk '{print $2}')"
+          echo "version=${v%%+*}" >> "$GITHUB_OUTPUT"
+          echo "tag=v${v%%+*}" >> "$GITHUB_OUTPUT"
+
+      - name: گردآوریِ فایل‌های اندروید
+        uses: actions/download-artifact@v4
+        with:
+          pattern: android-*
+          path: release
+          merge-multiple: true
+
+      - name: گردآوریِ فایل‌های ویندوز
+        uses: actions/download-artifact@v4
+        with:
+          name: windows
+          path: release
+
+      - name: فهرستِ فایل‌ها
+        run: ls -lhR release
+
+      - name: ساختِ یادداشتِ انتشار
+        run: |
+          V="${{ steps.ver.outputs.version }}"
+          {
+            echo "## OVERX v$V"
+            echo
+            echo "### اندروید"
+            echo "- APK تفکیک‌شده بر اساسِ معماری (arm64-v8a / armeabi-v7a / x86_64)"
+            echo "- AAB برای انتشار در Google Play"
+            echo
+            echo "### ویندوز"
+            echo "- ZIP پرتابل (x64) — باز کنید و \`overx.exe\` را اجرا کنید"
+            echo
+            echo "هسته‌های پشتیبانی‌شده: sing-box 1.11+ و Xray-core 1.8+ / 25.x"
+          } > NOTES.md
+
+      - name: انتشار
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.ver.outputs.tag }}
+          name: OVERX v${{ steps.ver.outputs.version }}
+          body_path: NOTES.md
+          files: release/*
+          fail_on_unmatched_files: true
+          generate_release_notes: true

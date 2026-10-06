@@ -1,0 +1,61 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+
+jobs:
+  test:
+    name: تحلیل و تست
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+
+      - name: واکشیِ بسته‌ها
+        run: flutter pub get
+
+      - name: تحلیلِ ایستا
+        run: flutter analyze --no-fatal-infos --no-fatal-warnings
+
+      - name: تست‌های واحد و ویجتی
+        run: flutter test
+
+  # این کار همان چیزی است که هیچ تستِ واحدی نمی‌تواند ثابت کند:
+  # اینکه هسته‌ی واقعی کانفیگی که برنامه تولید می‌کند را قبول می‌کند یا نه.
+  # نگاه کن به docs/CONFIG_COMPAT.md
+  config-validation:
+    name: اعتبارسنجیِ کانفیگ با هسته‌ی واقعی
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+
+      - name: واکشیِ بسته‌ها
+        run: flutter pub get
+
+      - name: ساختِ کانفیگِ همه‌ی پروتکل‌ها
+        run: flutter test tool/emit_configs_test.dart
+
+      - name: sing-box check و xray -test
+        run: ./tool/validate_configs.sh
+
+  # لایه‌ی اندروید هیچ‌وقت کامپایل نشده بود چون libbox.aar نداریم. این کار
+  # آن را با یک استابِ استخراج‌شده از سورسِ Go کامپایل می‌کند و خطاهایی از
+  # جنسِ «امضا جور نیست / چنین متدی نیست» را همان‌جا می‌گیرد.
+  # نگاه کن به tool/android_stub/README.md و docs/LIBBOX_CONTRACT.md
+  android-compile:
+    name: کامپایلِ لایه‌ی اندروید
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: کامپایل با android.jar و استابِ libbox
+        run: ./tool/check_android.sh

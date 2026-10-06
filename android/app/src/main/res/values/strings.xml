@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">OVERX</string>
+    <string name="libbox_channel_name">OVERX VPN</string>
+    <string name="libbox_starting">در حال راه‌اندازی sing-box…</string>
+    <string name="libbox_running">sing-box در حال اجرا</string>
+</resources>
