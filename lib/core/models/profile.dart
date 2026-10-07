@@ -7,7 +7,8 @@ enum ProfileProtocol {
   trojan,
   shadowsocks,
   hysteria2,
-  tuic;
+  tuic,
+  anytls;
 
   String get id => name;
 
@@ -18,6 +19,7 @@ enum ProfileProtocol {
         ProfileProtocol.shadowsocks => 'Shadowsocks',
         ProfileProtocol.hysteria2 => 'Hysteria2',
         ProfileProtocol.tuic => 'TUIC',
+        ProfileProtocol.anytls => 'AnyTLS',
       };
 
   /// نام نوع در sing-box.
@@ -28,6 +30,7 @@ enum ProfileProtocol {
         ProfileProtocol.shadowsocks => 'shadowsocks',
         ProfileProtocol.hysteria2 => 'hysteria2',
         ProfileProtocol.tuic => 'tuic',
+        ProfileProtocol.anytls => 'anytls',
       };
 
   /// نام پروتکل در Xray.
@@ -36,9 +39,10 @@ enum ProfileProtocol {
         ProfileProtocol.vmess => 'vmess',
         ProfileProtocol.trojan => 'trojan',
         ProfileProtocol.shadowsocks => 'shadowsocks',
-        // Hysteria2 / TUIC در Xray-core پشتیبانی نمی‌شن.
+        // Hysteria2 / TUIC / AnyTLS در Xray-core پشتیبانی نمی‌شن.
         ProfileProtocol.hysteria2 => null,
         ProfileProtocol.tuic => null,
+        ProfileProtocol.anytls => null,
       };
 
   bool get supportedByXray => xrayProtocol != null;

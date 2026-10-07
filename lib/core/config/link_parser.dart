@@ -21,6 +21,7 @@ class LinkParser {
       'ss' => _shadowsocks(link),
       'hysteria2' || 'hy2' => _hysteria2(link),
       'tuic' => _tuic(link),
+      'anytls' => _anytls(link),
       _ => null,
     };
   }
@@ -332,6 +333,29 @@ class LinkParser {
         'password': password,
         if (q['sni'] != null) 'sni': q['sni'],
         if (q['alpn'] != null) 'alpn': q['alpn'],
+      },
+    );
+  }
+
+  // ---------------------------------------------------------------- anytls
+
+  static Profile? _anytls(String link) {
+    final a = _splitAuthority(link);
+    if (a == null) return null;
+    final (password, host, port) = a;
+    final q = _query(link);
+
+    return Profile(
+      id: _id(),
+      name: _fragment(link).isEmpty ? '$host:$port' : _fragment(link),
+      protocol: ProfileProtocol.anytls,
+      address: host,
+      port: port,
+      rawLink: link,
+      fields: {
+        'password': password,
+        if (q['sni'] != null) 'sni': q['sni'],
+        if (q['security'] != null) 'security': q['security'],
       },
     );
   }

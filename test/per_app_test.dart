@@ -113,5 +113,14 @@ void main() {
       expect(s.perAppProxyEnabled, false);
       expect(s.perAppPackages, isEmpty);
     });
+
+    test('پرچمِ coreBeta پیش‌فرض false است و در JSON حفظ می‌شود', () {
+      expect(const AppSettings().coreBeta, false);
+      final on = AppSettings.fromJson(
+          const AppSettings().copyWith(coreBeta: true).toJson());
+      expect(on.coreBeta, true);
+      final legacy = AppSettings.fromJson(<String, dynamic>{'lang': 'fa'});
+      expect(legacy.coreBeta, false);
+    });
   });
 }

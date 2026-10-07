@@ -38,6 +38,7 @@ class AppSettings {
     this.xrayApiPort = 8080,
     this.autoSwitchCore = false,
     this.keepAlive = true,
+    this.coreBeta = false,
     this.perAppProxyEnabled = false,
     this.perAppProxyMode = PerAppProxyMode.exclude,
     this.perAppPackages = const <String>[],
@@ -84,6 +85,9 @@ class AppSettings {
   final bool autoSwitchCore;
   final bool keepAlive;
 
+  /// بررسیِ نسخه‌های بتا/پیش‌انتشار هسته‌ها.
+  final bool coreBeta;
+
   /// مسیرِ دستیِ باینری (اگر null باشه، خودکار پیدا می‌شه).
   final String? singboxPath;
   final String? xrayPath;
@@ -113,6 +117,7 @@ class AppSettings {
     int? xrayApiPort,
     bool? autoSwitchCore,
     bool? keepAlive,
+    bool? coreBeta,
     String? singboxPath,
     String? xrayPath,
     String? activeProfileId,
@@ -143,6 +148,7 @@ class AppSettings {
         xrayApiPort: xrayApiPort ?? this.xrayApiPort,
         autoSwitchCore: autoSwitchCore ?? this.autoSwitchCore,
         keepAlive: keepAlive ?? this.keepAlive,
+        coreBeta: coreBeta ?? this.coreBeta,
         singboxPath: singboxPath ?? this.singboxPath,
         xrayPath: xrayPath ?? this.xrayPath,
         activeProfileId: activeProfileId ?? this.activeProfileId,
@@ -174,6 +180,7 @@ class AppSettings {
         'xrayApiPort': xrayApiPort,
         'autoSwitchCore': autoSwitchCore,
         'keepAlive': keepAlive,
+        'coreBeta': coreBeta,
         'perAppProxyEnabled': perAppProxyEnabled,
         'perAppProxyMode': perAppProxyMode.name,
         'perAppPackages': perAppPackages,
@@ -214,6 +221,7 @@ class AppSettings {
       xrayApiPort: (j['xrayApiPort'] as num?)?.toInt() ?? 8080,
       autoSwitchCore: j['autoSwitchCore'] as bool? ?? false,
       keepAlive: j['keepAlive'] as bool? ?? true,
+      coreBeta: j['coreBeta'] as bool? ?? false,
       singboxPath: j['singboxPath'] as String?,
       xrayPath: j['xrayPath'] as String?,
       activeProfileId: j['activeProfileId'] as String?,

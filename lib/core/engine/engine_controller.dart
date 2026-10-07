@@ -699,6 +699,7 @@ class SettingsController extends Notifier<AppSettings> {
   Future<void> setXrayApiPort(int v) async => _save(state.copyWith(xrayApiPort: v));
   Future<void> setAutoSwitchCore(bool v) async => _save(state.copyWith(autoSwitchCore: v));
   Future<void> setKeepAlive(bool v) async => _save(state.copyWith(keepAlive: v));
+  Future<void> setCoreBeta(bool v) async => _save(state.copyWith(coreBeta: v));
   Future<void> setPerAppProxyEnabled(bool v) async =>
       _save(state.copyWith(perAppProxyEnabled: v));
   Future<void> setPerAppProxyMode(PerAppProxyMode v) async =>

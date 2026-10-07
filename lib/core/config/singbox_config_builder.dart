@@ -246,6 +246,12 @@ class SingboxConfigBuilder {
           'zero_rtt_handshake': true,
           ..._tls(p),
         });
+
+      case ProfileProtocol.anytls:
+        base.addAll({
+          'password': p.password ?? '',
+          ..._tls(p),
+        });
     }
 
     if (s.mux && _muxSupported(p.protocol)) {

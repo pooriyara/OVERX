@@ -39,6 +39,23 @@ void main() {
       expect(p.name, 'NL');
     });
 
+    test('anytls', () {
+      final p = LinkParser.parse(
+        'anytls://pa55word@any.example.net:443?sni=example.com&security=tls#ANY',
+      );
+      expect(p, isNotNull);
+      expect(p!.protocol, ProfileProtocol.anytls);
+      expect(p.address, 'any.example.net');
+      expect(p.port, 443);
+      expect(p.password, 'pa55word');
+      expect(p.sni, 'example.com');
+      expect(p.security, 'tls');
+      expect(p.name, 'ANY');
+      // anytls با Xray پشتیبانی نمی‌شود.
+      expect(p.protocol.supportedByXray, isFalse);
+      expect(p.protocol.singboxType, 'anytls');
+    });
+
     test('shadowsocks (base64 userinfo)', () {
       // "aes-256-gcm:hunter2" به صورت base64
       final p = LinkParser.parse(

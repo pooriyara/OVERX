@@ -88,6 +88,14 @@ class CoresPage extends ConsumerWidget {
                 onChanged: (v) =>
                     ref.read(settingsProvider.notifier).setKeepAlive(v),
               ),
+              const SettingDivider(),
+              SwitchSetting(
+                title: s.t('coreBeta'),
+                subtitle: s.t('coreBetaSub'),
+                value: settings.coreBeta,
+                onChanged: (v) =>
+                    ref.read(settingsProvider.notifier).setCoreBeta(v),
+              ),
             ],
           ),
         ),
@@ -210,35 +218,115 @@ class _CoreCardState extends ConsumerState<_CoreCard> {
 
   Future<void> _check() async {
     setState(() => _checking = true);
-    var v = await ref.read(engineProvider.notifier).checkCore(widget.type);
 
-    // اگر پیدا نشد و دسکتاپ هستیم، خودکار دانلود/نصب کن و دوباره بررسی کن.
-    String? installError;
-    if (v == null && CoreInstaller.supported) {
-      try {
-        await CoreInstaller.install(widget.type);
-        v = await ref.read(engineProvider.notifier).checkCore(widget.type);
-      } on CoreInstallException catch (e) {
-        installError = e.message;
-      } catch (e) {
-        installError = '$e';
-      }
+    // نسخه‌ی فعلیِ نصب‌شده (در صورت وجود).
+    final engine = ref.read(engineProvider);
+    final current = widget.type == CoreType.singbox
+        ? engine.singboxVersion
+        : engine.xrayVersion;
+
+    CoreRelease? release;
+    String? error;
+    try {
+      release = await CoreInstaller.latestRelease(
+        widget.type,
+        includePrerelease: ref.read(settingsProvider).coreBeta,
+      );
+    } on CoreInstallException catch (e) {
+      error = e.message;
+    } catch (e) {
+      error = '$e';
     }
 
-    if (mounted) setState(() => _checking = false);
     if (!mounted) return;
-    final ok = v != null;
+
+    if (release == null) {
+      setState(() => _checking = false);
+      ScaffoldMessenger.of(context)
+        ..clearSnackBars()
+        ..showSnackBar(
+          SnackBar(
+            content: Text(error ?? widget.s.t('checkFailed')),
+            backgroundColor: StatusColors.error,
+          ),
+        );
+      return;
+    }
+
+    final newVersion = release.version.replaceFirst('v', '');
+    final rel = release; // غیرتهی برای استفاده در کلوزر
+    // اگر نسخه‌ی نصب‌شده همانِ آخرین است، فقط اطلاع بده.
+    if (current != null && current == newVersion) {
+      setState(() => _checking = false);
+      ScaffoldMessenger.of(context)
+        ..clearSnackBars()
+        ..showSnackBar(
+          SnackBar(content: Text('${widget.s.t('upToDate')} · v$current')),
+        );
+      return;
+    }
+
+    setState(() => _checking = false);
+
+    // نمایش مشخصات و گرفتن تأیید پیش از دانلود.
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(widget.s.t('updateAvailable')),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('${widget.type.displayName}'),
+            const SizedBox(height: 10),
+            Text(
+              '${widget.s.t('currentVersion')}: '
+              '${current == null ? widget.s.t('notInstalled') : 'v$current'}',
+            ),
+            Text('${widget.s.t('newVersion')}: v$newVersion'),
+            Text('${widget.s.t('downloadSize')}: ${rel.sizeLabel}'),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text(widget.s.t('cancel')),
+          ),
+          FilledButton.icon(
+            onPressed: () => Navigator.pop(ctx, true),
+            icon: const Icon(Icons.download_rounded, size: 16),
+            label: Text(widget.s.t('install')),
+          ),
+        ],
+      ),
+    );
+
+    if (ok != true || !mounted) return;
+    setState(() => _checking = true);
+
+    String? v;
+    String? installError;
+    try {
+      await CoreInstaller.install(widget.type, release: rel);
+      v = await ref.read(engineProvider.notifier).checkCore(widget.type);
+    } on CoreInstallException catch (e) {
+      installError = e.message;
+    } catch (e) {
+      installError = '$e';
+    }
+
+    if (!mounted) return;
+    setState(() => _checking = false);
     ScaffoldMessenger.of(context)
       ..clearSnackBars()
       ..showSnackBar(
         SnackBar(
           content: Text(
-            ok
+            v != null
                 ? '${widget.type.displayName} v$v'
-                : installError ??
-                    '${widget.type.displayName} — ${widget.s.t('notFound')}',
+                : installError ?? '${widget.type.displayName} — ${widget.s.t('notFound')}',
           ),
-          backgroundColor: ok ? null : StatusColors.error,
+          backgroundColor: v != null ? null : StatusColors.error,
         ),
       );
   }

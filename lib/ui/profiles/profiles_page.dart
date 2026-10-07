@@ -9,8 +9,9 @@ import 'package:overx/core/net/sub_fetcher.dart';
 import 'package:overx/l10n/strings.dart';
 import 'package:overx/l10n/strings_provider.dart';
 import 'package:overx/theme/app_theme.dart';
+import 'package:overx/ui/shell/app_shell.dart' show kWideBreakpoint;
 
-enum _Menu { clip, addSub, updateSub, realPing, sortPing }
+enum _Menu { clip, addSub, updateSub, realPing, sortPing, removeSub }
 
 /// صفحه‌ی پروفایل‌ها / اشتراک‌ها.
 class ProfilesPage extends ConsumerStatefulWidget {
@@ -36,69 +37,79 @@ class _ProfilesPageState extends ConsumerState<ProfilesPage> {
         ? profiles
         : profiles.where((p) => p.groupId == _selectedGroup).toList();
 
-    return Scaffold(
-      backgroundColor: Colors.transparent,
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => _showAddDialog(context, ref),
-        icon: const Icon(Icons.add_rounded, size: 20),
-        label: Text(s.t('add')),
-      ),
-      body: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          _TopBar(
-            s: s,
-            subs: subs,
-            selected: _selectedGroup,
-            busy: _busy,
-            onSelect: (id) => setState(() => _selectedGroup = id),
-            onMenu: (m) => _onMenu(m, ref, shown),
-          ),
-          Expanded(
-            child: shown.isEmpty
-                ? ListView(
-                    padding: const EdgeInsets.all(16),
-                    children: [_EmptyState(s: s)],
-                  )
-                : ListView(
-                    padding: const EdgeInsets.fromLTRB(16, 4, 16, 96),
-                    children: [
-                      ...shown.map(
-                        (p) => Padding(
-                          padding: const EdgeInsets.only(bottom: 10),
-                          child: _ProfileCard(
-                            profile: p,
-                            active: p.id == activeId,
-                            onTap: () {
-                              ref.read(profilesProvider.notifier).select(p.id);
-                              ScaffoldMessenger.of(context)
-                                ..clearSnackBars()
-                                ..showSnackBar(
-                                  SnackBar(
-                                      content: Text(s.t('profileActivated'))),
-                                );
-                              if (engine.isConnected) {
+    return Stack(
+      children: [
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            _TopBar(
+              s: s,
+              subs: subs,
+              selected: _selectedGroup,
+              busy: _busy,
+              onSelect: (id) => setState(() => _selectedGroup = id),
+              onMenu: (m) => _onMenu(m, ref, shown),
+            ),
+            Expanded(
+              child: shown.isEmpty
+                  ? ListView(
+                      padding: const EdgeInsets.all(16),
+                      children: [_EmptyState(s: s)],
+                    )
+                  : ListView(
+                      padding: const EdgeInsets.fromLTRB(16, 4, 16, 96),
+                      children: [
+                        ...shown.map(
+                          (p) => Padding(
+                            padding: const EdgeInsets.only(bottom: 10),
+                            child: _ProfileCard(
+                              profile: p,
+                              active: p.id == activeId,
+                              onTap: () {
                                 ref
-                                    .read(engineProvider.notifier)
-                                    .connect(p);
-                              }
-                            },
-                            onDelete: () async {
-                              final ok = await _confirmDelete(context, s, p);
-                              if (ok == true) {
-                                await ref
                                     .read(profilesProvider.notifier)
-                                    .remove(p.id);
-                              }
-                            },
+                                    .select(p.id);
+                                ScaffoldMessenger.of(context)
+                                  ..clearSnackBars()
+                                  ..showSnackBar(
+                                    SnackBar(
+                                        content:
+                                            Text(s.t('profileActivated'))),
+                                  );
+                                if (engine.isConnected) {
+                                  ref
+                                      .read(engineProvider.notifier)
+                                      .connect(p);
+                                }
+                              },
+                              onDelete: () async {
+                                final ok = await _confirmDelete(context, s, p);
+                                if (ok == true) {
+                                  await ref
+                                      .read(profilesProvider.notifier)
+                                      .remove(p.id);
+                                }
+                              },
+                              onEdit: () => _showEditDialog(context, ref, p),
+                            ),
                           ),
                         ),
-                      ),
-                    ],
-                  ),
+                      ],
+                    ),
+            ),
+          ],
+        ),
+        PositionedDirectional(
+          end: 16,
+          bottom: 16,
+          child: FloatingActionButton.extended(
+            heroTag: 'profiles-add',
+            onPressed: () => _showAddDialog(context, ref),
+            icon: const Icon(Icons.add_rounded, size: 20),
+            label: Text(s.t('add')),
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 
@@ -119,7 +130,55 @@ class _ProfilesPageState extends ConsumerState<ProfilesPage> {
         if (mounted) setState(() => _busy = false);
       case _Menu.sortPing:
         await ref.read(profilesProvider.notifier).sortByPing();
+      case _Menu.removeSub:
+        await _removeSelectedSub(ref, s);
     }
+  }
+
+  Future<void> _removeSelectedSub(WidgetRef ref, Strings s) async {
+    final id = _selectedGroup;
+    if (id == null) return;
+    final subs = ref.read(subscriptionsProvider);
+    Subscription? sub;
+    for (final e in subs) {
+      if (e.id == id) sub = e;
+    }
+    if (sub == null) return;
+    final subName = sub.name;
+    final profileCount = ref
+        .read(profilesProvider)
+        .where((p) => p.groupId == id)
+        .length;
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(s.t('removeSubscription')),
+        content: Text(s.t('removeSubscriptionBody')
+            .replaceAll('{name}', subName)
+            .replaceAll('{count}', '$profileCount')),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text(s.t('cancel')),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(
+              backgroundColor: StatusColors.error,
+              foregroundColor: Colors.white,
+            ),
+            onPressed: () => Navigator.pop(ctx, true),
+            child: Text(s.t('remove')),
+          ),
+        ],
+      ),
+    );
+    if (ok != true || !mounted) return;
+    await ref.read(subscriptionsProvider.notifier).remove(id);
+    if (!mounted) return;
+    setState(() => _selectedGroup = null);
+    ScaffoldMessenger.of(context)
+      ..clearSnackBars()
+      ..showSnackBar(SnackBar(content: Text(s.t('subscriptionRemoved'))));
   }
 
   Future<void> _updateSubs(WidgetRef ref, Strings s) async {
@@ -282,6 +341,158 @@ class _ProfilesPageState extends ConsumerState<ProfilesPage> {
     return s.startsWith('http://') || s.startsWith('https://');
   }
 
+  /// ویرایشِ کاملِ یک پروفایل: نام، پروتکل، آدرس، پورت و همه‌ی فیلدها.
+  Future<void> _showEditDialog(
+    BuildContext context,
+    WidgetRef ref,
+    Profile p,
+  ) async {
+    final s = ref.read(stringsProvider);
+    final name = TextEditingController(text: p.name);
+    final address = TextEditingController(text: p.address);
+    final port = TextEditingController(text: '${p.port}');
+    var protocol = p.protocol;
+
+    final keys = p.fields.keys.toList();
+    final fields = <String, TextEditingController>{
+      for (final k in keys) k: TextEditingController(text: '${p.fields[k]}'),
+    };
+    const intKeys = {'upMbps', 'downMbps'};
+
+    final result = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setSt) => AlertDialog(
+          title: Row(
+            children: [
+              Expanded(child: Text(s.t('editProfile'))),
+              IconButton(
+                icon: const Icon(Icons.close_rounded, size: 20),
+                onPressed: () => Navigator.pop(ctx, false),
+              ),
+            ],
+          ),
+          content: SizedBox(
+            width: 480,
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  TextField(
+                    controller: name,
+                    decoration: InputDecoration(
+                      labelText: s.t('name'),
+                      labelStyle: const TextStyle(fontSize: 12),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  DropdownButtonFormField<ProfileProtocol>(
+                    value: protocol,
+                    decoration: InputDecoration(
+                      labelText: s.t('protocol'),
+                      labelStyle: const TextStyle(fontSize: 12),
+                    ),
+                    items: ProfileProtocol.values
+                        .map((e) => DropdownMenuItem(
+                              value: e,
+                              child: Text(e.label,
+                                  style: const TextStyle(fontSize: 13)),
+                            ))
+                        .toList(),
+                    onChanged: (v) => setSt(() => protocol = v ?? protocol),
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextField(
+                          controller: address,
+                          textDirection: TextDirection.ltr,
+                          decoration: const InputDecoration(
+                            labelText: 'Address',
+                            labelStyle: TextStyle(fontSize: 12),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      SizedBox(
+                        width: 100,
+                        child: TextField(
+                          controller: port,
+                          keyboardType: TextInputType.number,
+                          textDirection: TextDirection.ltr,
+                          decoration: const InputDecoration(
+                            labelText: 'Port',
+                            labelStyle: TextStyle(fontSize: 12),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  if (keys.isNotEmpty) ...[
+                    const SizedBox(height: 14),
+                    Align(
+                      alignment: AlignmentDirectional.centerStart,
+                      child: Text(
+                        s.t('profileFields'),
+                        style: const TextStyle(
+                            fontSize: 12, fontWeight: FontWeight.w700),
+                      ),
+                    ),
+                    ...keys.map((k) => Padding(
+                          padding: const EdgeInsets.only(top: 8),
+                          child: TextField(
+                            controller: fields[k],
+                            textDirection: TextDirection.ltr,
+                            style: const TextStyle(fontSize: 12),
+                            decoration: InputDecoration(
+                              labelText: k,
+                              labelStyle: const TextStyle(fontSize: 12),
+                            ),
+                          ),
+                        )),
+                  ],
+                ],
+              ),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: Text(s.t('cancel')),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(ctx, true),
+              child: Text(s.t('save')),
+            ),
+          ],
+        ),
+      ),
+    );
+
+    if (result != true || !context.mounted) return;
+
+    final nextFields = <String, dynamic>{
+      for (final k in keys)
+        k: intKeys.contains(k)
+            ? (int.tryParse(fields[k]!.text.trim()) ?? p.fields[k])
+            : fields[k]!.text,
+    };
+    final updated = p.copyWith(
+      name: name.text.trim().isEmpty ? p.name : name.text.trim(),
+      protocol: protocol,
+      address: address.text.trim(),
+      port: int.tryParse(port.text.trim()) ?? p.port,
+      fields: nextFields,
+    );
+    await ref.read(profilesProvider.notifier).update(updated);
+    if (!mounted) return;
+    ScaffoldMessenger.of(context)
+      ..clearSnackBars()
+      ..showSnackBar(SnackBar(content: Text(s.t('saved'))));
+  }
+
   Future<bool?> _confirmDelete(
           BuildContext context, Strings s, Profile p) =>
       showDialog<bool>(
@@ -335,11 +546,21 @@ class _TopBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
+    final wide = MediaQuery.sizeOf(context).width >= kWideBreakpoint;
     return Padding(
       padding: const EdgeInsets.fromLTRB(12, 10, 8, 6),
       child: Row(
         children: [
+          // در حالت باریک، منو به‌صورت Drawer است؛ این دکمه آن را باز می‌کند
+          // تا کاربر همیشه راه بازگشت به صفحه‌های دیگر را داشته باشد.
+          if (!wide)
+            Builder(
+              builder: (ctx) => IconButton(
+                icon: const Icon(Icons.menu_rounded),
+                tooltip: s.t('menu'),
+                onPressed: () => Scaffold.of(ctx).openDrawer(),
+              ),
+            ),
           Expanded(
             child: SizedBox(
               height: 40,
@@ -384,6 +605,13 @@ class _TopBar extends StatelessWidget {
                 value: _Menu.sortPing,
                 child: _item(Icons.sort_rounded, s.t('sortPing')),
               ),
+              if (selected != null) const PopupMenuDivider(),
+              if (selected != null)
+                PopupMenuItem(
+                  value: _Menu.removeSub,
+                  child: _item(
+                      Icons.delete_forever_rounded, s.t('removeSubscription')),
+                ),
             ],
           ),
         ],
@@ -454,12 +682,14 @@ class _ProfileCard extends StatelessWidget {
     required this.active,
     required this.onTap,
     required this.onDelete,
+    required this.onEdit,
   });
 
   final Profile profile;
   final bool active;
   final VoidCallback onTap;
   final VoidCallback onDelete;
+  final VoidCallback onEdit;
 
   @override
   Widget build(BuildContext context) {
@@ -559,6 +789,12 @@ class _ProfileCard extends StatelessWidget {
             ),
             const SizedBox(width: 8),
           ],
+          IconButton(
+            icon: Icon(Icons.edit_outlined,
+                size: 19, color: scheme.onSurfaceVariant),
+            tooltip: 'edit',
+            onPressed: onEdit,
+          ),
           IconButton(
             icon: Icon(Icons.delete_outline_rounded,
                 size: 19, color: scheme.onSurfaceVariant),
